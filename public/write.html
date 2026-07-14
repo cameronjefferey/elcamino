@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Write</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Nunito+Sans:wght@400;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header"></header>
+  <main class="container" style="padding-top: 24px; max-width: 620px; padding-bottom: 60px;">
+
+    <!-- LOGIN -->
+    <section id="view-login" hidden>
+      <div class="card center" style="padding: 36px 26px;">
+        <div id="login-shell"></div>
+        <h1 style="margin: 10px 0;">Hi Mom &amp; Dad! 👋</h1>
+        <p style="font-size: 19px;">Type the family password to start writing.</p>
+        <form id="login-form">
+          <input type="password" name="password" placeholder="Family password"
+                 autocomplete="current-password" style="text-align:center; font-size: 22px;">
+          <button class="btn big mt" type="submit">Let me in</button>
+        </form>
+        <div id="login-msg"></div>
+      </div>
+    </section>
+
+    <!-- MENU -->
+    <section id="view-menu" hidden>
+      <h1 class="center">What would you like to do?</h1>
+      <div class="menu-btns">
+        <button class="btn" data-goto="post">✏️&nbsp; Write a new post</button>
+        <button class="btn green" data-goto="location">📍&nbsp; Update where we are</button>
+        <button class="btn" style="background: var(--ochre); color:#4d3505;" data-goto="numbers">🔢&nbsp; Add today's numbers</button>
+      </div>
+      <div class="card">
+        <h2 style="margin-top:0; font-size: 21px;">Your posts</h2>
+        <div id="my-posts"><p style="color:var(--ink-soft);">Loading…</p></div>
+      </div>
+      <p class="center"><button class="btn subtle" id="logout-btn">Log out</button></p>
+    </section>
+
+    <!-- POST FORM -->
+    <section id="view-post" hidden>
+      <p><a href="#" data-goto="menu">← Back</a></p>
+      <h1 id="post-form-title">Write a new post</h1>
+
+      <form id="post-form">
+        <label for="pf-title">Title</label>
+        <input type="text" id="pf-title" placeholder="e.g. Over the Pyrenees at last!" autocomplete="off">
+
+        <label for="pf-body">What happened? <span class="hint">Just write like you're telling us at the dinner table.</span></label>
+        <textarea id="pf-body" placeholder="Today we walked..."></textarea>
+
+        <label>Photos <span class="hint">They shrink automatically so uploads are quick.</span></label>
+        <button type="button" class="btn ghost big" id="add-photos-btn">📷&nbsp; Add photos</button>
+        <input type="file" id="photo-input" accept="image/*" multiple hidden>
+        <div class="thumbs" id="thumbs"></div>
+
+        <div style="display:flex; gap: 12px;">
+          <div style="flex:1;">
+            <label for="pf-day">Day number</label>
+            <input type="number" id="pf-day" inputmode="numeric" min="1">
+          </div>
+          <div style="flex:2;">
+            <label for="pf-location">Where are you?</label>
+            <input type="text" id="pf-location" list="towns-list" placeholder="Town name" autocomplete="off">
+            <datalist id="towns-list"></datalist>
+          </div>
+        </div>
+
+        <button class="btn green big mt" type="submit" id="publish-btn">Publish ✓</button>
+        <div class="autosave-note" id="autosave-note"></div>
+        <div id="post-msg"></div>
+      </form>
+    </section>
+
+    <!-- LOCATION -->
+    <section id="view-location" hidden>
+      <p><a href="#" data-goto="menu">← Back</a></p>
+      <h1>Where are you now?</h1>
+      <div class="card">
+        <p id="current-loc" style="font-size: 19px;"></p>
+        <label for="town-select">Pick the town you're in</label>
+        <select id="town-select"></select>
+        <button class="btn green big mt" id="save-location-btn">Save our location 📍</button>
+        <div id="location-msg"></div>
+      </div>
+    </section>
+
+    <!-- METRICS -->
+    <section id="view-numbers" hidden>
+      <p><a href="#" data-goto="menu">← Back</a></p>
+      <h1>Today's numbers</h1>
+      <form id="metrics-form" class="card">
+        <div style="display:flex; gap: 12px;">
+          <div style="flex:3;">
+            <label for="mf-date">Date</label>
+            <input type="date" id="mf-date">
+          </div>
+          <div style="flex:2;">
+            <label for="mf-day">Day #</label>
+            <input type="number" id="mf-day" inputmode="numeric" min="1">
+          </div>
+        </div>
+
+        <label for="mf-start">Started walking in</label>
+        <input type="text" id="mf-start" list="towns-list-2" placeholder="Town" autocomplete="off">
+        <label for="mf-end">Ended the day in</label>
+        <input type="text" id="mf-end" list="towns-list-2" placeholder="Town" autocomplete="off">
+        <datalist id="towns-list-2"></datalist>
+
+        <label for="mf-dist">
+          Distance walked
+          <span class="unit-toggle" style="margin-left: 10px; vertical-align: middle;">
+            <button type="button" data-u="mi">miles</button>
+            <button type="button" data-u="km">km</button>
+          </span>
+        </label>
+        <input type="number" id="mf-dist" inputmode="decimal" step="0.1" min="0" placeholder="e.g. 14.5">
+
+        <label for="mf-steps">Steps <span class="hint">(from your watch or phone)</span></label>
+        <input type="number" id="mf-steps" inputmode="numeric" min="0" placeholder="e.g. 32000">
+
+        <details class="optional-fields">
+          <summary>More fun numbers (optional) ▾</summary>
+          <label for="mf-elev">Elevation climbed (feet)</label>
+          <input type="number" id="mf-elev" inputmode="numeric" min="0">
+          <label for="mf-blisters">Blisters 🩹</label>
+          <input type="number" id="mf-blisters" inputmode="numeric" min="0">
+          <label for="mf-cafes">Cafés con leche ☕</label>
+          <input type="number" id="mf-cafes" inputmode="numeric" min="0">
+          <label for="mf-favorite">Favorite moment of the day</label>
+          <input type="text" id="mf-favorite" placeholder="e.g. Sunrise over the vineyards">
+        </details>
+
+        <button class="btn green big mt" type="submit">Save today's numbers ✓</button>
+        <div id="metrics-msg"></div>
+      </form>
+
+      <div class="card">
+        <h2 style="margin-top:0; font-size: 21px;">Recent days <span class="hint" style="font-weight:400;">(tap one to fix it)</span></h2>
+        <div id="recent-metrics"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/upload.js"></script>
+  <script src="/js/write.js"></script>
+</body>
+</html>

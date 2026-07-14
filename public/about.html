@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>About the Camino</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Nunito+Sans:wght@400;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header"></header>
+  <main class="container prose" style="padding-top: 30px;">
+    <div class="center" id="about-shell"></div>
+    <h1 style="text-align:center;">What is the Camino de Santiago?</h1>
+    <p class="lead center">A quick, friendly guide for everyone following along — no prior pilgrimage knowledge required.</p>
+
+    <h2>The short version</h2>
+    <p>The Camino de Santiago — "the Way of Saint James" — is a network of ancient walking routes that all lead to one place: the cathedral city of <strong>Santiago de Compostela</strong> in the far northwest corner of Spain. People have been walking it for more than a <strong>thousand years</strong>. Some walk for faith, some for adventure, some to mark a big birthday or a new chapter in life — and plenty walk simply because putting one foot in front of the other for weeks on end turns out to be good for the soul.</p>
+
+    <h2>A little history</h2>
+    <p>Tradition holds that the remains of the apostle <strong>Saint James</strong> (Santiago, in Spanish) were discovered in Galicia in the 9th century, and a great cathedral rose over the spot. Word spread, and by the Middle Ages the Camino was one of the three great pilgrimages of the Christian world, alongside Rome and Jerusalem. Kings and peasants alike walked it. Villages, bridges, monasteries, and hospitals sprang up along the way to feed and shelter the pilgrims — many of which are still doing exactly that today, a millennium later.</p>
+
+    <h2>The route they're walking</h2>
+    <p>There are many Caminos, but the most famous is the <strong>Camino Francés</strong> — the "French Way." It begins in <strong>Saint-Jean-Pied-de-Port</strong>, a little town on the French side of the Pyrenees, climbs over the mountains into Spain, and rolls west for about <strong>500 miles (775 km)</strong> through Pamplona, the vineyards of Rioja, the wide-open wheat plains of the meseta, the cathedral cities of Burgos and León, and the green hills of Galicia — all the way to Santiago. Most pilgrims take around five to six weeks, walking 10–15 miles a day and sleeping in simple pilgrim hostels called <em>albergues</em>.</p>
+    <p>You can follow their progress town by town on the <a href="/map">map page</a>.</p>
+
+    <h2>The scallop shell 🐚</h2>
+    <p>The symbol of the Camino is the <strong>scallop shell</strong>. You'll see it everywhere along the route — on stone waymarkers, sidewalk tiles, and dangling from nearly every pilgrim's backpack. The grooves of the shell all converge at a single point, just as the many Camino routes converge on Santiago. Pilgrims have carried the shell for centuries as proof of their journey, and following the shells (plus painted <strong>yellow arrows</strong>) is literally how you find your way.</p>
+
+    <h2>"Buen Camino!"</h2>
+    <p>It means "good way" or "have a good journey," and it's the greeting pilgrims exchange dozens of times a day — between strangers, shopkeepers, farmers, and fellow walkers of every nationality. It's part hello, part blessing, part encouragement to keep going.</p>
+
+    <h2>What the journey means</h2>
+    <p>Ask a hundred pilgrims why they walk and you'll get a hundred answers. But nearly everyone comes home saying the same things: the Camino strips life down to walking, eating, resting, and talking. Strangers become friends over shared blisters and shared bread. The days are simple and the miles add up to something bigger than exercise. Whatever brings a person to the trail, the Camino has a way of giving them what they actually needed.</p>
+
+    <h2>How you can follow along</h2>
+    <p>Everything they post shows up on the <a href="/">Latest Posts</a> page, their daily stats live on the <a href="/metrics">Metrics</a> page, and if you'd like an email whenever there's news from the trail, just <a href="/follow">leave your email here</a>. And if you see them post about a hard day — leave the digital equivalent of a "Buen Camino" by sending them a note. It matters more than you'd think at mile 300.</p>
+  </main>
+  <footer class="site-footer"></footer>
+  <script src="/js/common.js"></script>
+  <script>
+    (async () => {
+      await Camino.renderHeader('/about');
+      Camino.renderFooter();
+      document.getElementById('about-shell').innerHTML = Camino.shellSvg('shell');
+      document.querySelector('#about-shell svg').style.width = '52px';
+      document.querySelector('#about-shell svg').style.height = '52px';
+    })();
+  </script>
+</body>
+</html>

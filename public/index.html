@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Camino Blog</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Nunito+Sans:wght@400;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 56 L12 42 C6 30 10 14 32 8 C54 14 58 30 52 42 Z' fill='%23d9a441'/%3E%3C/svg%3E">
+</head>
+<body>
+  <header class="site-header"></header>
+
+  <div class="hero container">
+    <div id="hero-shell"></div>
+    <h1 id="hero-title"></h1>
+    <p class="tagline" id="hero-tagline"></p>
+    <div class="status-strip" id="status-strip"></div>
+  </div>
+
+  <main class="container">
+    <div class="card" id="intro-card" style="display:none;">
+      <p id="intro-text" style="margin:0; font-size:18px;"></p>
+      <div class="center mt">
+        <form id="follow-inline" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+          <input type="email" name="email" placeholder="your@email.com" required
+                 style="flex:1; min-width:220px; max-width:340px;" autocomplete="email">
+          <button class="btn green" type="submit">Follow along ✉️</button>
+        </form>
+        <div id="follow-inline-msg"></div>
+      </div>
+    </div>
+
+    <div id="feed"></div>
+    <div class="center mt">
+      <button class="btn ghost" id="load-more" style="display:none;">Show older posts</button>
+    </div>
+  </main>
+
+  <footer class="site-footer"></footer>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/feed.js"></script>
+</body>
+</html>

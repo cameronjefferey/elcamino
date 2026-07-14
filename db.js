@@ -1,0 +1,85 @@
+const { Pool, types } = require('pg');
+
+// Return DATE columns as plain 'YYYY-MM-DD' strings so days never shift across timezones.
+types.setTypeParser(1082, (v) => v);
+
+const connectionString =
+  process.env.DATABASE_URL || 'postgres://localhost:5432/camino';
+
+const pool = new Pool({
+  connectionString,
+  ssl: /localhost|127\.0\.0\.1/.test(connectionString)
+    ? false
+    : { rejectUnauthorized: false },
+});
+
+async function init() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS posts (
+      id SERIAL PRIMARY KEY,
+      title TEXT NOT NULL,
+      body TEXT NOT NULL DEFAULT '',
+      day_number INTEGER,
+      location TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS photos (
+      id SERIAL PRIMARY KEY,
+      post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+      data BYTEA NOT NULL,
+      mime TEXT NOT NULL DEFAULT 'image/jpeg',
+      position INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS subscribers (
+      id SERIAL PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      token TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS metrics (
+      id SERIAL PRIMARY KEY,
+      date DATE NOT NULL UNIQUE,
+      day_number INTEGER,
+      start_town TEXT,
+      end_town TEXT,
+      miles NUMERIC(6,1),
+      steps INTEGER,
+      elevation_ft INTEGER,
+      blisters INTEGER,
+      cafes INTEGER,
+      favorite TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value JSONB NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+
+  // Clean up photos that were uploaded but never attached to a published post.
+  await pool.query(
+    `DELETE FROM photos WHERE post_id IS NULL AND created_at < now() - interval '7 days'`
+  );
+}
+
+async function getSetting(key) {
+  const r = await pool.query('SELECT value FROM settings WHERE key = $1', [key]);
+  return r.rows[0] ? r.rows[0].value : null;
+}
+
+async function setSetting(key, value) {
+  await pool.query(
+    `INSERT INTO settings (key, value, updated_at) VALUES ($1, $2, now())
+     ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = now()`,
+    [key, JSON.stringify(value)]
+  );
+}
+
+module.exports = { pool, init, getSetting, setSetting };

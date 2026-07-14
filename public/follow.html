@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Follow Along</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Nunito+Sans:wght@400;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header"></header>
+  <main class="container" style="padding-top: 40px; max-width: 560px;">
+    <div class="card center" style="padding: 36px 28px;">
+      <div id="follow-shell"></div>
+      <h1 style="margin: 10px 0;">Follow along by email</h1>
+      <p style="font-size: 18px; color: var(--ink-soft);">
+        Pop your email in below and we'll send you a note whenever a new post
+        goes up from the trail. No spam, no passwords — and every email has an
+        unsubscribe link if you change your mind.
+      </p>
+      <form id="follow-form" class="mt">
+        <input type="email" name="email" placeholder="your@email.com" required
+               autocomplete="email" style="text-align:center; font-size: 20px;">
+        <button class="btn green big mt" type="submit">Follow the journey ✉️</button>
+      </form>
+      <div id="follow-msg"></div>
+    </div>
+  </main>
+  <footer class="site-footer"></footer>
+  <script src="/js/common.js"></script>
+  <script>
+    (async () => {
+      await Camino.renderHeader('/follow');
+      Camino.renderFooter();
+      document.getElementById('follow-shell').innerHTML = Camino.shellSvg('shell');
+      const form = document.getElementById('follow-form');
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = form.querySelector('button');
+        btn.disabled = true;
+        try {
+          const res = await fetch('/api/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: form.email.value }),
+          });
+          const data = await res.json();
+          document.getElementById('follow-msg').innerHTML =
+            `<div class="notice ${res.ok ? 'ok' : 'err'}">${Camino.esc(data.message || data.error)}</div>`;
+          if (res.ok) form.reset();
+        } catch {
+          document.getElementById('follow-msg').innerHTML =
+            `<div class="notice err">Couldn’t reach the server — please try again.</div>`;
+        }
+        btn.disabled = false;
+      });
+    })();
+  </script>
+</body>
+</html>
