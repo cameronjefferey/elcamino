@@ -361,6 +361,18 @@ app.get('/api/subscribers/count', async (req, res) => {
   res.json({ count: rows[0].n });
 });
 
+app.get('/api/subscribers', requireAuth, async (req, res) => {
+  const { rows } = await pool.query(
+    'SELECT id, email, created_at FROM subscribers ORDER BY created_at DESC'
+  );
+  res.json({ subscribers: rows });
+});
+
+app.delete('/api/subscribers/:id', requireAuth, async (req, res) => {
+  await pool.query('DELETE FROM subscribers WHERE id = $1', [req.params.id]);
+  res.json({ ok: true });
+});
+
 // ---------- static pages ----------
 
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1h', extensions: ['html'] }));

@@ -36,6 +36,7 @@
         <button class="btn green" data-goto="location">📍&nbsp; Update where we are</button>
         <button class="btn" style="background: var(--ochre); color:#4d3505;" data-goto="numbers">🔢&nbsp; Add today's numbers</button>
         <button class="btn" style="background: #5b7c8a;" data-goto="messages">💌&nbsp; Messages from readers</button>
+        <button class="btn subtle" data-goto="followers" style="min-height:56px; font-size:18px;">✉️&nbsp; See who's following along</button>
       </div>
       <div class="card">
         <h2 style="margin-top:0; font-size: 21px;">Your posts</h2>
@@ -98,6 +99,14 @@
       <h1>Messages from readers</h1>
       <p style="color:var(--ink-soft);">When someone replies to one of your post emails, it shows up here.</p>
       <div id="messages-list"></div>
+    </section>
+
+    <!-- FOLLOWERS -->
+    <section id="view-followers" hidden>
+      <p><a href="#" data-goto="menu">← Back</a></p>
+      <h1>Who's following along</h1>
+      <p style="color:var(--ink-soft);" id="followers-summary"></p>
+      <div id="followers-list"></div>
     </section>
 
     <!-- METRICS -->

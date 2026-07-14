@@ -9,7 +9,7 @@
   const DRAFT_KEY = 'camino_draft';
 
   // ---------- view switching ----------
-  const views = ['login', 'menu', 'post', 'location', 'numbers', 'messages'];
+  const views = ['login', 'menu', 'post', 'location', 'numbers', 'messages', 'followers'];
   function show(view) {
     views.forEach((v) => { $(`view-${v}`).hidden = v !== view; });
     window.scrollTo(0, 0);
@@ -363,6 +363,50 @@
   }
   document.querySelectorAll('[data-goto="messages"]').forEach((el) =>
     el.addEventListener('click', enterMessages));
+
+  // ---------- followers ----------
+  async function enterFollowers() {
+    const list = $('followers-list');
+    const summary = $('followers-summary');
+    summary.textContent = '';
+    list.innerHTML = `<div class="card center" style="color:var(--ink-soft);">Loading…</div>`;
+    try {
+      const res = await fetch('/api/subscribers');
+      if (!res.ok) throw new Error((await res.json()).error || 'Server error');
+      const { subscribers } = await res.json();
+      summary.textContent = subscribers.length === 1
+        ? '1 person gets an email when you post.'
+        : `${subscribers.length} people get an email when you post.`;
+      if (!subscribers.length) {
+        list.innerHTML = `<div class="card center">
+          <h2 style="margin-top:0;">Nobody yet!</h2>
+          <p style="color:var(--ink-soft);">Tell friends and family to visit the site and tap “Follow along.”</p>
+        </div>`;
+        return;
+      }
+      list.innerHTML = `<div class="card">${subscribers.map((s) => `
+        <div class="post-admin-row" data-id="${s.id}">
+          <div style="flex:1; min-width:0;">
+            <div class="title" style="font-weight:400; white-space:normal; word-break:break-all;">${Camino.esc(s.email)}</div>
+            <div class="meta">joined ${Camino.fmtDate(s.created_at, { month: 'long', day: 'numeric' })}</div>
+          </div>
+          <button class="btn subtle remove-sub" style="color:#a33; border-color:#e3c4bc;">Remove</button>
+        </div>`).join('')}</div>`;
+      list.querySelectorAll('.remove-sub').forEach((b) => {
+        b.addEventListener('click', async () => {
+          const row = b.closest('.post-admin-row');
+          const email = row.querySelector('.title').textContent;
+          if (!confirm(`Remove ${email} from the list?\n\nThey'll stop getting emails about new posts.`)) return;
+          await fetch(`/api/subscribers/${row.dataset.id}`, { method: 'DELETE' });
+          enterFollowers();
+        });
+      });
+    } catch (err) {
+      list.innerHTML = `<div class="notice err">${Camino.esc(err.message)} — tap the button again to retry.</div>`;
+    }
+  }
+  document.querySelectorAll('[data-goto="followers"]').forEach((el) =>
+    el.addEventListener('click', enterFollowers));
 
   // ---------- metrics ----------
   let mfUnits = Camino.getUnits();
