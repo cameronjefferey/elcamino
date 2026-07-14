@@ -6,14 +6,52 @@ types.setTypeParser(1082, (v) => v);
 const connectionString =
   process.env.DATABASE_URL || 'postgres://localhost:5432/camino';
 
-const pool = new Pool({
-  connectionString,
-  ssl: /localhost|127\.0\.0\.1/.test(connectionString)
-    ? false
-    : { rejectUnauthorized: false },
-});
+const isLocal = /localhost|127\.0\.0\.1/.test(connectionString);
+
+function makePool(useSsl) {
+  return new Pool({
+    connectionString,
+    ssl: useSsl ? { rejectUnauthorized: false } : false,
+  });
+}
+
+// Render's internal database URLs run on a private network without TLS, while
+// external URLs require it. Start with our best guess and fall back if the
+// server disagrees, so the app boots correctly with either URL.
+const state = { pool: makePool(!isLocal) };
+
+const pool = {
+  query: (...args) => state.pool.query(...args),
+};
+
+async function connectWithRetry() {
+  const maxAttempts = 12;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      await state.pool.query('SELECT 1');
+      return;
+    } catch (err) {
+      if (/does not support SSL/i.test(err.message)) {
+        console.log('[db] server does not support SSL - reconnecting without it');
+        state.pool = makePool(false);
+      } else if (/SSL.*(required|off)/i.test(err.message)) {
+        console.log('[db] server requires SSL - reconnecting with it');
+        state.pool = makePool(true);
+      } else if (attempt < maxAttempts) {
+        // Database may still be provisioning on the very first deploy.
+        console.log(`[db] connection attempt ${attempt} failed (${err.message}) - retrying in 5s`);
+        await new Promise((r) => setTimeout(r, 5000));
+      } else {
+        throw err;
+      }
+    }
+  }
+  throw new Error('Could not connect to the database');
+}
 
 async function init() {
+  await connectWithRetry();
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS posts (
       id SERIAL PRIMARY KEY,
