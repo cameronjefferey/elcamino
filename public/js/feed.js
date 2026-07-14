@@ -53,6 +53,31 @@
     }
   });
 
+  // ---- share this blog ----
+  const shareBtn = document.getElementById('share-btn');
+  const shareUrl = cfg.shareUrl || location.origin;
+  if (shareBtn) {
+    shareBtn.style.display = '';
+    shareBtn.addEventListener('click', async () => {
+      const shareData = {
+        title: cfg.siteTitle,
+        text: `Follow ${cfg.authors} as they walk the Camino de Santiago:`,
+        url: shareUrl,
+      };
+      if (navigator.share) {
+        try { await navigator.share(shareData); } catch { /* user dismissed the share sheet */ }
+        return;
+      }
+      const msgEl = document.getElementById('share-msg');
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        msgEl.innerHTML = `<div class="notice ok">Link copied! Paste it in a text or email to share: ${Camino.esc(shareUrl)}</div>`;
+      } catch {
+        msgEl.innerHTML = `<div class="notice ok">Share this link: <a href="${Camino.esc(shareUrl)}">${Camino.esc(shareUrl)}</a></div>`;
+      }
+    });
+  }
+
   // ---- posts feed ----
   const feed = document.getElementById('feed');
   const loadMoreBtn = document.getElementById('load-more');
