@@ -59,6 +59,8 @@
         <td>${e.blisters ?? ''}</td>
         <td>${e.cafes ?? ''}</td>
         <td style="white-space:normal; min-width:180px;">${Camino.esc(e.favorite || '')}</td>
+        <td>${Camino.esc(e.accommodation || '')}</td>
+        <td>${Camino.esc(e.meal_location || '')}</td>
       </tr>`;
     }).join('');
 
@@ -66,6 +68,7 @@
       <thead><tr>
         <th>Date</th><th>Day</th><th>From → To</th><th>${uLabel}</th><th>Total ${uLabel}</th>
         <th>Steps</th><th>Climb</th><th>Blisters 🩹</th><th>Cafés ☕</th><th>Favorite moment</th>
+        <th>Slept at 🛏️</th><th>Ate at 🍽️</th>
       </tr></thead>
       <tbody>${rows}
         <tr class="total-row">
@@ -74,7 +77,7 @@
           <td>${Camino.fmtNum(totSteps)}</td>
           <td>${totElev ? Camino.fmtNum(totElev) + ' ft' : ''}</td>
           <td>${entries.reduce((s, e) => s + Number(e.blisters || 0), 0)}</td>
-          <td>${totCafes}</td><td></td>
+          <td>${totCafes}</td><td></td><td></td><td></td>
         </tr>
       </tbody>
     </table></div>`;

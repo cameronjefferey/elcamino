@@ -91,6 +91,8 @@ async function init() {
       blisters INTEGER,
       cafes INTEGER,
       favorite TEXT,
+      accommodation TEXT,
+      meal_location TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
 
@@ -99,6 +101,12 @@ async function init() {
       value JSONB NOT NULL,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
+  `);
+
+  // Add columns introduced after the table already existed in production.
+  await pool.query(`
+    ALTER TABLE metrics ADD COLUMN IF NOT EXISTS accommodation TEXT;
+    ALTER TABLE metrics ADD COLUMN IF NOT EXISTS meal_location TEXT;
   `);
 
   // Clean up photos that were uploaded but never attached to a published post.

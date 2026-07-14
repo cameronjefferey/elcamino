@@ -356,6 +356,10 @@
           </div>
           <div style="color:var(--ink-soft); font-size:15px; margin: 2px 0 10px;">${Camino.esc(m.subject)}</div>
           <div style="white-space: pre-wrap; font-size:17px;">${Camino.esc(m.text)}</div>
+          ${m.quoted ? `<details style="margin-top:12px;">
+            <summary style="cursor:pointer; font-weight:700; color:var(--olive-dark); font-size:15px;">See what they replied to ▾</summary>
+            <div style="white-space: pre-wrap; font-size:15px; color:var(--ink-soft); border-left: 3px solid var(--line); padding-left: 12px; margin-top: 8px;">${Camino.esc(m.quoted)}</div>
+          </details>` : ''}
           <button type="button" class="btn subtle reply-btn mt">↩️&nbsp; Reply</button>
           <div class="reply-box" hidden>
             <textarea placeholder="Write back to ${Camino.esc(m.fromName)}…" style="min-height:130px; margin-top:12px;"></textarea>
@@ -494,6 +498,8 @@
     $('mf-blisters').value = e.blisters ?? '';
     $('mf-cafes').value = e.cafes ?? '';
     $('mf-favorite').value = e.favorite || '';
+    $('mf-accommodation').value = e.accommodation || '';
+    $('mf-meal').value = e.meal_location || '';
     window.scrollTo({ top: 0, behavior: 'smooth' });
     $('metrics-msg').innerHTML = `<div class="notice ok">Editing ${Camino.fmtDateShort(e.date)} — make your changes and hit Save.</div>`;
   }
@@ -543,6 +549,8 @@
       blisters: $('mf-blisters').value || null,
       cafes: $('mf-cafes').value || null,
       favorite: $('mf-favorite').value.trim() || null,
+      accommodation: $('mf-accommodation').value.trim() || null,
+      meal_location: $('mf-meal').value.trim() || null,
     };
     try {
       const res = await fetch('/api/metrics', {

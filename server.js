@@ -284,18 +284,19 @@ app.post('/api/metrics', requireAuth, async (req, res) => {
   if (!m.date) return res.status(400).json({ error: 'Please pick a date.' });
   const num = (v) => (v === '' || v === null || v === undefined ? null : Number(v));
   const { rows } = await pool.query(
-    `INSERT INTO metrics (date, day_number, start_town, end_town, miles, steps, elevation_ft, blisters, cafes, favorite)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+    `INSERT INTO metrics (date, day_number, start_town, end_town, miles, steps, elevation_ft, blisters, cafes, favorite, accommodation, meal_location)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
      ON CONFLICT (date) DO UPDATE SET
        day_number = EXCLUDED.day_number, start_town = EXCLUDED.start_town,
        end_town = EXCLUDED.end_town, miles = EXCLUDED.miles, steps = EXCLUDED.steps,
        elevation_ft = EXCLUDED.elevation_ft, blisters = EXCLUDED.blisters,
-       cafes = EXCLUDED.cafes, favorite = EXCLUDED.favorite
+       cafes = EXCLUDED.cafes, favorite = EXCLUDED.favorite,
+       accommodation = EXCLUDED.accommodation, meal_location = EXCLUDED.meal_location
      RETURNING *`,
     [
       m.date, num(m.day_number), m.start_town || null, m.end_town || null,
       num(m.miles), num(m.steps), num(m.elevation_ft), num(m.blisters),
-      num(m.cafes), m.favorite || null,
+      num(m.cafes), m.favorite || null, m.accommodation || null, m.meal_location || null,
     ]
   );
   res.json(rows[0]);
