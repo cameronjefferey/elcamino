@@ -6,7 +6,7 @@ const cookieParser = require('cookie-parser');
 const multer = require('multer');
 
 const { pool, init, getSetting, setSetting } = require('./db');
-const { notifySubscribersOfPost, sendWelcomeEmail } = require('./mailer');
+const { notifySubscribersOfPost, sendWelcomeEmail, sendReply } = require('./mailer');
 const { fetchInboxMessages } = require('./inbox');
 const TOWNS = require('./camino-data');
 const config = require('./config.json');
@@ -314,6 +314,30 @@ app.get('/api/messages', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('[inbox] fetch failed:', err.message);
     res.status(502).json({ error: 'Couldn\u2019t reach the mailbox right now. Try again in a minute.' });
+  }
+});
+
+app.post('/api/messages/:id/reply', requireAuth, async (req, res) => {
+  const text = String(req.body.text || '').trim();
+  if (!text) return res.status(400).json({ error: 'Write a little something first!' });
+  try {
+    const { enabled, messages } = await fetchInboxMessages();
+    if (!enabled) return res.status(400).json({ error: 'Email isn\u2019t set up yet.' });
+    const msg = messages.find((m) => String(m.id) === String(req.params.id));
+    if (!msg) {
+      return res.status(404).json({ error: 'Couldn\u2019t find that message anymore \u2014 go back and reopen it.' });
+    }
+    await sendReply({
+      to: msg.fromAddress,
+      subject: msg.subject,
+      text,
+      inReplyTo: msg.messageId,
+    });
+    console.log(`[reply] sent to ${msg.fromAddress} (message ${msg.id})`);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[reply] failed:', err.message);
+    res.status(502).json({ error: 'Couldn\u2019t send right now \u2014 try again in a minute.' });
   }
 });
 

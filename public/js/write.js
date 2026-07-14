@@ -349,14 +349,56 @@
         return;
       }
       el.innerHTML = messages.map((m) => `
-        <div class="card" style="${m.unread ? 'border-left: 5px solid var(--terracotta);' : ''}">
+        <div class="card" data-id="${m.id}" style="${m.unread ? 'border-left: 5px solid var(--terracotta);' : ''}">
           <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
             <strong style="font-size:18px;">${m.unread ? '🔵 ' : ''}${Camino.esc(m.fromName)}</strong>
             <span style="color:var(--ink-soft); font-size:15px;">${m.date ? Camino.fmtDate(m.date, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''}</span>
           </div>
           <div style="color:var(--ink-soft); font-size:15px; margin: 2px 0 10px;">${Camino.esc(m.subject)}</div>
           <div style="white-space: pre-wrap; font-size:17px;">${Camino.esc(m.text)}</div>
+          <button type="button" class="btn subtle reply-btn mt">↩️&nbsp; Reply</button>
+          <div class="reply-box" hidden>
+            <textarea placeholder="Write back to ${Camino.esc(m.fromName)}…" style="min-height:130px; margin-top:12px;"></textarea>
+            <button type="button" class="btn green big send-reply" style="margin-top:10px;">Send reply ✉️</button>
+            <div class="reply-msg"></div>
+          </div>
         </div>`).join('');
+      el.querySelectorAll('.reply-btn').forEach((b) => {
+        b.addEventListener('click', () => {
+          const box = b.nextElementSibling;
+          box.hidden = !box.hidden;
+          if (!box.hidden) box.querySelector('textarea').focus();
+        });
+      });
+      el.querySelectorAll('.send-reply').forEach((b) => {
+        b.addEventListener('click', async () => {
+          const card = b.closest('.card');
+          const box = card.querySelector('.reply-box');
+          const textarea = box.querySelector('textarea');
+          const msgEl = box.querySelector('.reply-msg');
+          if (!textarea.value.trim()) {
+            msgEl.innerHTML = `<div class="notice err">Write a little something first!</div>`;
+            return;
+          }
+          b.disabled = true;
+          b.textContent = 'Sending…';
+          try {
+            const res = await fetch(`/api/messages/${card.dataset.id}/reply`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text: textarea.value }),
+            });
+            if (!res.ok) throw new Error((await res.json()).error || 'Server error');
+            msgEl.innerHTML = `<div class="notice ok">Sent! 🎉</div>`;
+            textarea.disabled = true;
+            b.textContent = 'Reply sent ✓';
+          } catch (err) {
+            msgEl.innerHTML = `<div class="notice err">${Camino.esc(err.message)}</div>`;
+            b.disabled = false;
+            b.textContent = 'Send reply ✉️';
+          }
+        });
+      });
     } catch (err) {
       el.innerHTML = `<div class="notice err">${Camino.esc(err.message)} — tap the button again to retry.</div>`;
     }

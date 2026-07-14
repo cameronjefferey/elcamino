@@ -95,6 +95,39 @@ async function notifySubscribersOfPost(post) {
   }
 }
 
+// Reply to a reader's email, threaded into their existing conversation.
+async function sendReply({ to, subject, text, inReplyTo }) {
+  if (!emailEnabled()) throw new Error('Email is not configured');
+  const subj = /^\s*re:/i.test(subject) ? subject : `Re: ${subject}`;
+  const html = `<div style="font-family: Georgia, serif; font-size:17px; line-height:1.6; color:#33302a; white-space:pre-wrap;">${escapeHtml(text)}</div>`;
+  if (gmailTransport) {
+    await gmailTransport.sendMail({
+      from: `"${config.siteTitle}" <${GMAIL_USER}>`,
+      to,
+      subject: subj,
+      text,
+      html,
+      ...(inReplyTo ? { inReplyTo, references: inReplyTo } : {}),
+    });
+    return;
+  }
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: FROM_EMAIL,
+      to,
+      subject: subj,
+      html,
+      ...(inReplyTo ? { headers: { 'In-Reply-To': inReplyTo, References: inReplyTo } } : {}),
+    }),
+  });
+  if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
+}
+
 // Fire-and-forget welcome note so new followers know the signup worked.
 async function sendWelcomeEmail(email, token) {
   if (!emailEnabled()) return;
@@ -121,4 +154,4 @@ async function sendWelcomeEmail(email, token) {
   }
 }
 
-module.exports = { notifySubscribersOfPost, sendWelcomeEmail };
+module.exports = { notifySubscribersOfPost, sendWelcomeEmail, sendReply };

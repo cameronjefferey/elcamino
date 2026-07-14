@@ -52,6 +52,7 @@ async function fetchInboxMessages() {
             id: msg.uid,
             fromName: from.name || from.address || 'Someone',
             fromAddress: (from.address || '').toLowerCase(),
+            messageId: parsed.messageId || null, // for threading replies
             subject: parsed.subject || '(no subject)',
             date: parsed.date ? parsed.date.toISOString() : null,
             text: cleanReplyText(parsed.text),
