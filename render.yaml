@@ -17,10 +17,14 @@ services:
         sync: false # set this in the Render dashboard - the password the authors will type
       - key: SITE_URL
         sync: false # e.g. https://camino-blog.onrender.com (used in notification emails)
+      - key: GMAIL_USER
+        sync: false # gmail address to send notifications from
+      - key: GMAIL_APP_PASSWORD
+        sync: false # gmail app password (Google Account - Security - App passwords)
       - key: RESEND_API_KEY
-        sync: false # optional - from resend.com, enables email notifications
+        sync: false # alternative provider - from resend.com (used only if Gmail vars unset)
       - key: FROM_EMAIL
-        sync: false # optional - verified sender, e.g. "Camino Blog <camino@yourdomain.com>"
+        sync: false # optional - verified Resend sender, e.g. "Camino Blog <camino@yourdomain.com>"
 
 databases:
   - name: camino-db

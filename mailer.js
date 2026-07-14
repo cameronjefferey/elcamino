@@ -1,9 +1,19 @@
+const nodemailer = require('nodemailer');
 const { pool } = require('./db');
 const config = require('./config.json');
 
+const GMAIL_USER = process.env.GMAIL_USER;
+const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const FROM_EMAIL = process.env.FROM_EMAIL || 'Camino Blog <onboarding@resend.dev>';
+const FROM_EMAIL = process.env.FROM_EMAIL || GMAIL_USER || 'Camino Blog <onboarding@resend.dev>';
 const SITE_URL = (process.env.SITE_URL || '').replace(/\/$/, '');
+
+const gmailTransport = GMAIL_USER && GMAIL_APP_PASSWORD
+  ? nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD },
+    })
+  : null;
 
 function escapeHtml(s) {
   return String(s || '').replace(/[&<>"']/g, (c) => ({
@@ -12,6 +22,15 @@ function escapeHtml(s) {
 }
 
 async function sendEmail(to, subject, html) {
+  if (gmailTransport) {
+    await gmailTransport.sendMail({
+      from: `"${config.siteTitle}" <${GMAIL_USER}>`,
+      to,
+      subject,
+      html,
+    });
+    return;
+  }
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -26,10 +45,14 @@ async function sendEmail(to, subject, html) {
   }
 }
 
+function emailEnabled() {
+  return !!(gmailTransport || RESEND_API_KEY);
+}
+
 // Fire-and-forget: never let email problems break posting.
 async function notifySubscribersOfPost(post) {
-  if (!RESEND_API_KEY) {
-    console.log('[mailer] RESEND_API_KEY not set - skipping notification emails');
+  if (!emailEnabled()) {
+    console.log('[mailer] no email provider configured (GMAIL_USER/GMAIL_APP_PASSWORD or RESEND_API_KEY) - skipping notifications');
     return;
   }
   try {
@@ -63,7 +86,7 @@ async function notifySubscribersOfPost(post) {
       } catch (err) {
         console.error(`[mailer] failed for ${sub.email}:`, err.message);
       }
-      // Gentle pacing to stay under provider rate limits.
+      // Gentle pacing to stay well under provider rate limits.
       await new Promise((r) => setTimeout(r, 600));
     }
     console.log(`[mailer] notified ${subs.length} subscriber(s) about post ${post.id}`);

@@ -33,11 +33,12 @@ The route towns (for the map, dropdowns, and progress bar) are in `camino-data.j
    |---|---|
    | `AUTHOR_PASSWORD` | The one password the walkers type at `/write`. Pick something easy to remember, e.g. `peregrinos2026` |
    | `SITE_URL` | Your site's full URL, e.g. `https://camino-blog.onrender.com` (used for links in emails) |
-   | `RESEND_API_KEY` | *(optional)* API key from [resend.com](https://resend.com) — enables email notifications |
-   | `FROM_EMAIL` | *(optional)* Verified sender, e.g. `Camino Blog <hello@yourdomain.com>` |
+   | `GMAIL_USER` | Gmail address that notification emails are sent from |
+   | `GMAIL_APP_PASSWORD` | An app password for that account (Google Account → Security → 2-Step Verification → App passwords) |
+   | `RESEND_API_KEY` | *(alternative)* API key from [resend.com](https://resend.com), used only if the Gmail vars aren't set; requires a verified domain plus `FROM_EMAIL` |
 
-   Without a `RESEND_API_KEY`, everything works except the notification emails
-   (signups are still collected, so you can add the key later).
+   Without an email provider configured, everything works except the
+   notification emails (signups are still collected, so you can add it later).
 
 Photos are stored in Postgres, so they survive deploys and restarts with no
 extra storage service. At ~300 KB per compressed photo, a couple hundred photos
