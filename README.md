@@ -1,4 +1,4 @@
-# Mom & Dad's Camino Blog
+# Kim, Tracey & Jeff's Camino Blog
 
 A travel blog for walking the Camino de Santiago. Readers follow along with no
 account needed; the authors get a dead-simple, phone-first writing area behind
@@ -31,7 +31,7 @@ The route towns (for the map, dropdowns, and progress bar) are in `camino-data.j
 
    | Variable | What it is |
    |---|---|
-   | `AUTHOR_PASSWORD` | The one password your parents type at `/write`. Pick something easy to remember, e.g. `peregrinos2026` |
+   | `AUTHOR_PASSWORD` | The one password the walkers type at `/write`. Pick something easy to remember, e.g. `peregrinos2026` |
    | `SITE_URL` | Your site's full URL, e.g. `https://camino-blog.onrender.com` (used for links in emails) |
    | `RESEND_API_KEY` | *(optional)* API key from [resend.com](https://resend.com) — enables email notifications |
    | `FROM_EMAIL` | *(optional)* Verified sender, e.g. `Camino Blog <hello@yourdomain.com>` |

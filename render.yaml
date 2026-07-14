@@ -14,7 +14,7 @@ services:
       - key: SESSION_SECRET
         generateValue: true
       - key: AUTHOR_PASSWORD
-        sync: false # set this in the Render dashboard - the password your parents will type
+        sync: false # set this in the Render dashboard - the password the authors will type
       - key: SITE_URL
         sync: false # e.g. https://camino-blog.onrender.com (used in notification emails)
       - key: RESEND_API_KEY

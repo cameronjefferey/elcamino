@@ -25,6 +25,7 @@
 
   // ---------- login ----------
   $('login-shell').innerHTML = Camino.shellSvg();
+  $('login-greeting').textContent = `Hi ${cfg.authors}! 👋`;
   $('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button');

@@ -96,10 +96,11 @@ const Camino = {
       : `${links.find(([h]) => h === active)?.[1] || ''} · ${cfg.siteTitle}`;
   },
 
-  renderFooter() {
+  async renderFooter() {
     const el = document.querySelector('.site-footer');
     if (!el) return;
-    el.innerHTML = `Made with love for the road to Santiago · <a href="/write">Mom &amp; Dad: write here</a>`;
+    const cfg = await this.config();
+    el.innerHTML = `Made with love for the road to Santiago · <a href="/write">${this.esc(cfg.authors)}: write here</a>`;
   },
 
   // ---- lightbox ----
