@@ -95,4 +95,30 @@ async function notifySubscribersOfPost(post) {
   }
 }
 
-module.exports = { notifySubscribersOfPost };
+// Fire-and-forget welcome note so new followers know the signup worked.
+async function sendWelcomeEmail(email, token) {
+  if (!emailEnabled()) return;
+  try {
+    const unsubUrl = SITE_URL ? `${SITE_URL}/unsubscribe?token=${token}` : '#';
+    const html = `
+      <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; color: #33302a;">
+        <p style="color:#b4532a; font-size:14px; letter-spacing:1px; text-transform:uppercase;">${escapeHtml(config.siteTitle)}</p>
+        <h1 style="font-size:26px; margin:8px 0;">You're following along! 🐚</h1>
+        <p style="font-size:17px; line-height:1.6;">Thanks for signing up. Whenever ${escapeHtml(config.authors)}
+        post an update from the trail, you'll get an email right here with the story and a link to the photos.</p>
+        <p style="font-size:17px; line-height:1.6;">In the meantime, you can visit the site any time to see
+        the latest posts, watch their progress on the map, and check the daily numbers.</p>
+        ${SITE_URL ? `<p style="margin:28px 0;"><a href="${SITE_URL}" style="background:#b4532a; color:#fff; padding:14px 26px; border-radius:10px; text-decoration:none; font-size:16px;">Visit the blog →</a></p>` : ''}
+        <p style="font-size:17px; line-height:1.6;">Buen Camino!</p>
+        <hr style="border:none; border-top:1px solid #e8e0d1; margin:32px 0;">
+        <p style="font-size:12px; color:#8a8172;">Didn't mean to sign up?
+        <a href="${unsubUrl}" style="color:#8a8172;">Unsubscribe</a></p>
+      </div>`;
+    await sendEmail(email, `You're following ${config.siteTitle}!`, html);
+    console.log(`[mailer] welcome email sent to ${email}`);
+  } catch (err) {
+    console.error(`[mailer] welcome email failed for ${email}:`, err.message);
+  }
+}
+
+module.exports = { notifySubscribersOfPost, sendWelcomeEmail };

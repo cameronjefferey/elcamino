@@ -6,7 +6,7 @@ const cookieParser = require('cookie-parser');
 const multer = require('multer');
 
 const { pool, init, getSetting, setSetting } = require('./db');
-const { notifySubscribersOfPost } = require('./mailer');
+const { notifySubscribersOfPost, sendWelcomeEmail } = require('./mailer');
 const TOWNS = require('./camino-data');
 const config = require('./config.json');
 
@@ -263,12 +263,14 @@ app.post('/api/subscribe', async (req, res) => {
      ON CONFLICT (email) DO NOTHING RETURNING id`,
     [email, token]
   );
+  const isNew = result.rows.length > 0;
   res.json({
     ok: true,
-    message: result.rows.length
-      ? 'You\u2019re on the list! You\u2019ll get an email whenever there\u2019s a new post.'
+    message: isNew
+      ? 'You\u2019re on the list! Check your inbox for a welcome note.'
       : 'Good news \u2014 you were already on the list!',
   });
+  if (isNew) sendWelcomeEmail(email, token); // async, non-blocking
 });
 
 app.get('/unsubscribe', async (req, res) => {
