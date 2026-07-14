@@ -6,6 +6,7 @@ one shared password.
 
 - **Latest Posts** — newest-first feed with photos and a tap-to-enlarge lightbox
 - **Map** — interactive Camino Francés route with a "they are here" marker and the trail of towns already walked
+- **Weather on the trail** — live conditions in the walkers' current town plus the forecast for the next three towns ahead (shown on the home page and the map, powered by the free [Open-Meteo](https://open-meteo.com) API — no key or signup needed)
 - **Metrics** — daily stats table with automatic cumulative totals, a miles/km toggle, and charts
 - **About the Camino** — a friendly explainer for readers new to the pilgrimage
 - **Follow Along** — one-field email signup; subscribers get an email for every new post, with an unsubscribe link
