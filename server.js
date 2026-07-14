@@ -334,7 +334,7 @@ app.post('/api/subscribe', async (req, res) => {
   res.json({
     ok: true,
     message: isNew
-      ? 'You\u2019re on the list! Check your inbox for a welcome note.'
+      ? 'You\u2019re on the list! We just sent you a welcome note \u2014 if it\u2019s not in your inbox, check your spam folder and mark it \u201cNot spam\u201d so future posts reach you.'
       : 'Good news \u2014 you were already on the list!',
   });
   if (isNew) sendWelcomeEmail(email, token); // async, non-blocking
