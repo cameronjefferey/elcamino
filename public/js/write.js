@@ -9,7 +9,7 @@
   const DRAFT_KEY = 'camino_draft';
 
   // ---------- view switching ----------
-  const views = ['login', 'menu', 'post', 'location', 'numbers'];
+  const views = ['login', 'menu', 'post', 'location', 'numbers', 'messages'];
   function show(view) {
     views.forEach((v) => { $(`view-${v}`).hidden = v !== view; });
     window.scrollTo(0, 0);
@@ -327,6 +327,42 @@
     }
     btn.disabled = false;
   });
+
+  // ---------- reader messages ----------
+  async function enterMessages() {
+    const el = $('messages-list');
+    el.innerHTML = `<div class="card center" style="color:var(--ink-soft);">
+      Checking the mailbox… this takes a few seconds. ⏳</div>`;
+    try {
+      const res = await fetch('/api/messages');
+      if (!res.ok) throw new Error((await res.json()).error || 'Server error');
+      const { enabled, messages } = await res.json();
+      if (!enabled) {
+        el.innerHTML = `<div class="card center">Email isn't set up yet, so there's no mailbox to check.</div>`;
+        return;
+      }
+      if (!messages.length) {
+        el.innerHTML = `<div class="card center">
+          <h2 style="margin-top:0;">No messages yet</h2>
+          <p style="color:var(--ink-soft);">When friends and family reply to one of your post emails, their notes will show up right here.</p>
+        </div>`;
+        return;
+      }
+      el.innerHTML = messages.map((m) => `
+        <div class="card" style="${m.unread ? 'border-left: 5px solid var(--terracotta);' : ''}">
+          <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <strong style="font-size:18px;">${m.unread ? '🔵 ' : ''}${Camino.esc(m.fromName)}</strong>
+            <span style="color:var(--ink-soft); font-size:15px;">${m.date ? Camino.fmtDate(m.date, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''}</span>
+          </div>
+          <div style="color:var(--ink-soft); font-size:15px; margin: 2px 0 10px;">${Camino.esc(m.subject)}</div>
+          <div style="white-space: pre-wrap; font-size:17px;">${Camino.esc(m.text)}</div>
+        </div>`).join('');
+    } catch (err) {
+      el.innerHTML = `<div class="notice err">${Camino.esc(err.message)} — tap the button again to retry.</div>`;
+    }
+  }
+  document.querySelectorAll('[data-goto="messages"]').forEach((el) =>
+    el.addEventListener('click', enterMessages));
 
   // ---------- metrics ----------
   let mfUnits = Camino.getUnits();

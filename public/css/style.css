@@ -208,6 +208,44 @@ input:focus, select:focus, textarea:focus {
 }
 .status-chip .icon { margin-right: 4px; }
 
+/* ---------- weather ---------- */
+
+.weather-card { padding: 20px 22px; }
+.weather-heading { margin: 0 0 14px; font-size: 22px; text-align: center; }
+.weather-strip {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+@media (min-width: 640px) {
+  .weather-strip { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+}
+.weather-tile {
+  text-align: center;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 8px;
+  background: var(--cream);
+}
+.weather-tile.current {
+  background: #fdf3e3;
+  border-color: var(--ochre);
+  box-shadow: 0 0 0 3px rgba(217, 164, 65, 0.18);
+}
+.weather-tile .w-town { font-weight: 800; font-size: 15px; line-height: 1.3; min-height: 39px; display: flex; align-items: center; justify-content: center; }
+.weather-tile .w-icon { font-size: 34px; line-height: 1.2; margin: 4px 0 2px; }
+.weather-tile .w-label { font-size: 14px; color: var(--ink-soft); }
+.weather-tile .w-temp {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--terracotta);
+  margin-top: 2px;
+}
+.weather-tile .w-low { font-size: 18px; color: var(--ink-soft); font-weight: 400; }
+.weather-tile .w-sub { font-size: 13px; color: var(--ink-soft); }
+.w-note { text-align: center; color: var(--ink-soft); font-size: 14px; margin-top: 12px; }
+
 /* ---------- posts feed ---------- */
 
 .post-card {

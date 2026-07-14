@@ -35,6 +35,7 @@
         <button class="btn" data-goto="post">✏️&nbsp; Write a new post</button>
         <button class="btn green" data-goto="location">📍&nbsp; Update where we are</button>
         <button class="btn" style="background: var(--ochre); color:#4d3505;" data-goto="numbers">🔢&nbsp; Add today's numbers</button>
+        <button class="btn" style="background: #5b7c8a;" data-goto="messages">💌&nbsp; Messages from readers</button>
       </div>
       <div class="card">
         <h2 style="margin-top:0; font-size: 21px;">Your posts</h2>
@@ -89,6 +90,14 @@
         <button class="btn green big mt" id="save-location-btn">Save our location 📍</button>
         <div id="location-msg"></div>
       </div>
+    </section>
+
+    <!-- MESSAGES -->
+    <section id="view-messages" hidden>
+      <p><a href="#" data-goto="menu">← Back</a></p>
+      <h1>Messages from readers</h1>
+      <p style="color:var(--ink-soft);">When someone replies to one of your post emails, it shows up here.</p>
+      <div id="messages-list"></div>
     </section>
 
     <!-- METRICS -->

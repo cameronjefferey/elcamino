@@ -7,6 +7,7 @@ const multer = require('multer');
 
 const { pool, init, getSetting, setSetting } = require('./db');
 const { notifySubscribersOfPost, sendWelcomeEmail } = require('./mailer');
+const { fetchInboxMessages } = require('./inbox');
 const TOWNS = require('./camino-data');
 const config = require('./config.json');
 
@@ -216,6 +217,61 @@ app.put('/api/location', requireAuth, async (req, res) => {
   res.json(loc);
 });
 
+// ---------- weather ----------
+
+// Open-Meteo (open-meteo.com): free, no API key. We fetch the current town
+// plus the next 3 on the route in one request and cache for 15 minutes.
+let weatherCache = { townIndex: null, expiresAt: 0, payload: null };
+
+app.get('/api/weather', async (req, res) => {
+  const loc = await getSetting('location');
+  const idx = Math.min(Math.max(parseInt(loc?.townIndex) || 0, 0), TOWNS.length - 1);
+
+  if (weatherCache.townIndex === idx && Date.now() < weatherCache.expiresAt) {
+    return res.json(weatherCache.payload);
+  }
+
+  const towns = TOWNS.slice(idx, idx + 4);
+  const url =
+    'https://api.open-meteo.com/v1/forecast' +
+    `?latitude=${towns.map((t) => t.lat).join(',')}` +
+    `&longitude=${towns.map((t) => t.lng).join(',')}` +
+    '&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation' +
+    '&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code' +
+    '&forecast_days=1&timezone=Europe%2FMadrid';
+
+  const r = await fetch(url);
+  if (!r.ok) {
+    return res.status(502).json({ error: 'Couldn\u2019t reach the weather service. Please try again soon.' });
+  }
+  let data = await r.json();
+  if (!Array.isArray(data)) data = [data]; // single location returns an object
+
+  const payload = {
+    updatedAt: new Date().toISOString(),
+    locations: towns.map((t, i) => ({
+      name: t.name,
+      km: t.km,
+      isCurrent: i === 0,
+      current: {
+        tempC: data[i].current.temperature_2m,
+        feelsLikeC: data[i].current.apparent_temperature,
+        windKmh: data[i].current.wind_speed_10m,
+        code: data[i].current.weather_code,
+      },
+      today: {
+        highC: data[i].daily.temperature_2m_max[0],
+        lowC: data[i].daily.temperature_2m_min[0],
+        rainChance: data[i].daily.precipitation_probability_max[0],
+        code: data[i].daily.weather_code[0],
+      },
+    })),
+  };
+
+  weatherCache = { townIndex: idx, expiresAt: Date.now() + 15 * 60 * 1000, payload };
+  res.json(payload);
+});
+
 // ---------- metrics ----------
 
 app.get('/api/metrics', async (req, res) => {
@@ -248,6 +304,17 @@ app.post('/api/metrics', requireAuth, async (req, res) => {
 app.delete('/api/metrics/:id', requireAuth, async (req, res) => {
   await pool.query('DELETE FROM metrics WHERE id = $1', [req.params.id]);
   res.json({ ok: true });
+});
+
+// ---------- reader messages (email replies) ----------
+
+app.get('/api/messages', requireAuth, async (req, res) => {
+  try {
+    res.json(await fetchInboxMessages());
+  } catch (err) {
+    console.error('[inbox] fetch failed:', err.message);
+    res.status(502).json({ error: 'Couldn\u2019t reach the mailbox right now. Try again in a minute.' });
+  }
 });
 
 // ---------- follow / subscribers ----------

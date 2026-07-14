@@ -27,6 +27,8 @@
       ? `${Camino.fmtNum(current.km)} of ${Camino.fmtNum(totalKm)} km along the route (${pct}%)`
       : `${Camino.dist(doneMi, 'mi')} of ${Camino.dist(totalMi, 'mi')} miles along the route (${pct}%)`;
 
+  Camino.renderWeather(document.getElementById('weather-card'));
+
   // ---- map ----
   const map = L.map('map', { scrollWheelZoom: false });
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

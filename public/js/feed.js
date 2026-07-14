@@ -31,6 +31,8 @@
     document.getElementById('status-strip').innerHTML = chips.join('');
   } catch (e) { /* status strip is decorative */ }
 
+  Camino.renderWeather(document.getElementById('weather-card'));
+
   // ---- inline follow form ----
   const form = document.getElementById('follow-inline');
   form.addEventListener('submit', async (e) => {

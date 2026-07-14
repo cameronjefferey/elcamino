@@ -14,6 +14,8 @@
     "compression": "^1.7.4",
     "cookie-parser": "^1.4.6",
     "express": "^4.19.2",
+    "imapflow": "^1.4.7",
+    "mailparser": "^3.9.14",
     "multer": "^2.2.0",
     "nodemailer": "^9.0.3",
     "pg": "^8.12.0"

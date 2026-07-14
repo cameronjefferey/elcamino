@@ -62,6 +62,61 @@ const Camino = {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   },
 
+  // ---- weather (Open-Meteo WMO codes) ----
+  cToF(c) { return c * 9 / 5 + 32; },
+  temp(c, units) {
+    const v = units === 'km' ? c : this.cToF(c);
+    return `${Math.round(v)}°`;
+  },
+  weatherIcon(code) {
+    if (code === 0) return { icon: '☀️', label: 'Clear' };
+    if (code <= 2) return { icon: '🌤️', label: 'Partly cloudy' };
+    if (code === 3) return { icon: '☁️', label: 'Overcast' };
+    if (code <= 48) return { icon: '🌫️', label: 'Foggy' };
+    if (code <= 57) return { icon: '🌦️', label: 'Drizzle' };
+    if (code <= 67) return { icon: '🌧️', label: 'Rain' };
+    if (code <= 77) return { icon: '🌨️', label: 'Snow' };
+    if (code <= 82) return { icon: '🌦️', label: 'Rain showers' };
+    if (code <= 86) return { icon: '🌨️', label: 'Snow showers' };
+    return { icon: '⛈️', label: 'Thunderstorm' };
+  },
+
+  weatherCardHtml(weather, units) {
+    const cards = weather.locations.map((loc) => {
+      const w = this.weatherIcon(loc.isCurrent ? loc.current.code : loc.today.code);
+      const rain = loc.today.rainChance;
+      return `<div class="weather-tile ${loc.isCurrent ? 'current' : ''}">
+        <div class="w-town">${loc.isCurrent ? '📍 ' : ''}${this.esc(loc.name)}</div>
+        <div class="w-icon" title="${w.label}">${w.icon}</div>
+        <div class="w-label">${w.label}</div>
+        ${loc.isCurrent
+          ? `<div class="w-temp">${this.temp(loc.current.tempC, units)}</div>
+             <div class="w-sub">feels like ${this.temp(loc.current.feelsLikeC, units)}</div>`
+          : `<div class="w-temp">${this.temp(loc.today.highC, units)}<span class="w-low"> / ${this.temp(loc.today.lowC, units)}</span></div>
+             <div class="w-sub">high / low today</div>`}
+        <div class="w-sub">${rain != null ? `☔ ${rain}% chance of rain` : '&nbsp;'}</div>
+      </div>`;
+    }).join('');
+    const ahead = weather.locations.length - 1;
+    const note = ahead > 0
+      ? `Where they are now, plus the next ${ahead === 1 ? 'town' : `${ahead} towns`} ahead.`
+      : 'They\u2019ve reached the end of the trail!';
+    return `<h2 class="weather-heading">Weather on the trail</h2>
+      <div class="weather-strip">${cards}</div>
+      <div class="w-note">${note}</div>`;
+  },
+
+  async renderWeather(el) {
+    if (!el) return;
+    try {
+      const res = await fetch('/api/weather');
+      if (!res.ok) return;
+      const weather = await res.json();
+      el.innerHTML = this.weatherCardHtml(weather, this.getUnits());
+      el.style.display = '';
+    } catch { /* weather is a bonus, never break the page */ }
+  },
+
   shellSvg(cls) {
     return `<svg class="${cls || ''}" viewBox="0 0 64 64" fill="none" aria-hidden="true">
       <path d="M32 56 L12 42 C6 30 10 14 32 8 C54 14 58 30 52 42 Z" fill="#d9a441"/>
