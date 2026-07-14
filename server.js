@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const crypto = require('crypto');
 const express = require('express');
 const compressionMw = require('compression');
@@ -398,12 +399,79 @@ app.delete('/api/subscribers/:id', requireAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
+// ---------- social share previews (Open Graph) ----------
+// Facebook, iMessage, WhatsApp, etc. read these tags from the raw HTML (their
+// crawlers don't run our JavaScript), so we inject them server-side. This makes
+// shared links show a title, blurb, and photo everywhere.
+
+const pageCache = {};
+function pageTemplate(file) {
+  if (!pageCache[file]) {
+    pageCache[file] = fs.readFileSync(path.join(__dirname, 'public', file), 'utf8');
+  }
+  return pageCache[file];
+}
+function escAttr(s) {
+  return String(s ?? '').replace(/[&<>"]/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+function baseUrl(req) {
+  return process.env.SITE_URL
+    ? process.env.SITE_URL.replace(/\/$/, '')
+    : `${req.protocol}://${req.get('host')}`;
+}
+function renderWithOg(file, tags) {
+  const meta =
+    tags.map(([p, c]) => `    <meta property="${escAttr(p)}" content="${escAttr(c)}">`).join('\n') +
+    '\n    <meta name="twitter:card" content="summary_large_image">';
+  return pageTemplate(file).replace('</head>', `${meta}\n  </head>`);
+}
+
+app.get('/', (req, res) => {
+  const base = baseUrl(req);
+  res.set('Cache-Control', 'public, max-age=300');
+  res.type('html').send(renderWithOg('index.html', [
+    ['og:site_name', config.siteTitle],
+    ['og:title', config.siteTitle],
+    ['og:description', config.tagline],
+    ['og:type', 'website'],
+    ['og:url', `${base}/`],
+  ]));
+});
+
+app.get('/post/:id', async (req, res, next) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT p.id, p.title, p.body,
+              (SELECT id FROM photos WHERE post_id = p.id ORDER BY position, id LIMIT 1) AS first_photo
+       FROM posts p WHERE p.id = $1`,
+      [req.params.id]
+    );
+    res.set('Cache-Control', 'public, max-age=300');
+    if (!rows.length) return res.type('html').send(pageTemplate('post.html'));
+    const post = rows[0];
+    const base = baseUrl(req);
+    const desc =
+      String(post.body || '').replace(/\s+/g, ' ').trim().slice(0, 200) || config.tagline;
+    const tags = [
+      ['og:site_name', config.siteTitle],
+      ['og:title', post.title],
+      ['og:description', desc],
+      ['og:type', 'article'],
+      ['og:url', `${base}/post/${post.id}`],
+    ];
+    if (post.first_photo) tags.push(['og:image', `${base}/photos/${post.first_photo}`]);
+    res.type('html').send(renderWithOg('post.html', tags));
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ---------- static pages ----------
 
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1h', extensions: ['html'] }));
 
 const send = (file) => (req, res) => res.sendFile(path.join(__dirname, 'public', file));
-app.get('/post/:id', send('post.html'));
 app.get('/map', send('map.html'));
 app.get('/metrics', send('metrics.html'));
 app.get('/about', send('about.html'));

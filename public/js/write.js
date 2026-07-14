@@ -286,15 +286,30 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error((await res.json()).error || 'Server error');
-      if (!editingId) localStorage.removeItem(DRAFT_KEY);
-      msg.innerHTML = `<div class="notice ok">🎉 ${editingId ? 'Saved!' : 'Published! Everyone following along will get an email.'}</div>`;
-      setTimeout(() => { enterMenu(); }, 1400);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Server error');
+      if (editingId) {
+        msg.innerHTML = `<div class="notice ok">🎉 Saved!</div>`;
+        setTimeout(() => { enterMenu(); }, 1400);
+        btn.disabled = false;
+        btn.textContent = 'Save changes ✓';
+      } else {
+        localStorage.removeItem(DRAFT_KEY);
+        const postUrl = `${location.origin}/post/${data.id}`;
+        msg.innerHTML = `<div class="notice ok">🎉 Published! Everyone following along will get an email.</div>
+          <p style="margin-top:16px; font-weight:800;">Want to share it on Facebook too?</p>
+          <a class="btn big" style="background:#1877f2;" target="_blank" rel="noopener"
+             href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}">Share to Facebook</a>
+          <button class="btn subtle big mt" type="button" id="post-done-btn">No thanks, I'm done</button>`;
+        $('post-done-btn').addEventListener('click', () => enterMenu());
+        btn.disabled = true;
+        btn.textContent = 'Published ✓';
+      }
     } catch (err) {
       msg.innerHTML = `<div class="notice err">Couldn’t publish (${Camino.esc(err.message)}). Your writing is saved on this phone — try again when the signal is better.</div>`;
+      btn.disabled = false;
+      btn.textContent = editingId ? 'Save changes ✓' : 'Publish ✓';
     }
-    btn.disabled = false;
-    btn.textContent = editingId ? 'Save changes ✓' : 'Publish ✓';
   });
 
   // ---------- location ----------
