@@ -421,9 +421,9 @@ function baseUrl(req) {
     : `${req.protocol}://${req.get('host')}`;
 }
 function renderWithOg(file, tags) {
-  const meta =
-    tags.map(([p, c]) => `    <meta property="${escAttr(p)}" content="${escAttr(c)}">`).join('\n') +
-    '\n    <meta name="twitter:card" content="summary_large_image">';
+  const meta = tags
+    .map(([p, c]) => `    <meta property="${escAttr(p)}" content="${escAttr(c)}">`)
+    .join('\n');
   return pageTemplate(file).replace('</head>', `${meta}\n  </head>`);
 }
 
