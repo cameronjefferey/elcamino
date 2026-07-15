@@ -469,7 +469,9 @@ app.get('/post/:id', async (req, res, next) => {
 
 // ---------- static pages ----------
 
-app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1h', extensions: ['html'] }));
+// maxAge 0 + ETag means browsers revalidate each load (cheap 304s) and never
+// get stuck on a stale version — important since the audience won't hard-refresh.
+app.use(express.static(path.join(__dirname, 'public'), { maxAge: 0, etag: true, extensions: ['html'] }));
 
 const send = (file) => (req, res) => res.sendFile(path.join(__dirname, 'public', file));
 app.get('/map', send('map.html'));
