@@ -550,6 +550,38 @@ table.metrics tr.total-row td { font-weight: 800; background: #f4eee0; }
 
 .autosave-note { color: var(--ink-soft); font-size: 15px; text-align: center; margin-top: 10px; min-height: 22px; }
 
+/* tap-anywhere town dropdown */
+.town-picker { position: relative; }
+.town-options {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 50;
+  background: var(--paper);
+  border: 2px solid var(--ochre);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 6px;
+  -webkit-overflow-scrolling: touch;
+}
+.town-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 18px;
+  color: var(--ink);
+  padding: 13px 14px;
+  border-radius: 9px;
+  cursor: pointer;
+}
+.town-option:hover, .town-option:focus { background: var(--cream); }
+
 .numbers-block {
   margin-top: 26px;
   padding: 18px 18px 6px;

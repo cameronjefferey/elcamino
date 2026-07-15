@@ -223,6 +223,58 @@ const Camino = {
     });
   },
 
+  // Turn a plain town text field into a tap-anywhere dropdown: clicking the
+  // field shows the full town list, tapping a town fills it, and typing still
+  // works for places that aren't on the list (it just filters the list).
+  attachTownPicker(input, towns) {
+    if (!input || input._townPicker) return;
+    input._townPicker = true;
+    input.setAttribute('autocomplete', 'off');
+    input.setAttribute('data-lpignore', 'true'); // hush password managers
+    input.setAttribute('data-1p-ignore', 'true');
+    input.removeAttribute('list'); // we render our own dropdown instead
+
+    const wrap = document.createElement('div');
+    wrap.className = 'town-picker';
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(input);
+
+    const panel = document.createElement('div');
+    panel.className = 'town-options';
+    panel.hidden = true;
+    wrap.appendChild(panel);
+
+    const names = towns.map((t) => t.name);
+    let selecting = false;
+
+    const render = (showAll) => {
+      const q = input.value.trim().toLowerCase();
+      const list = showAll || !q ? names : names.filter((n) => n.toLowerCase().includes(q));
+      panel.innerHTML = (list.length ? list : names)
+        .map((n) => `<button type="button" class="town-option">${this.esc(n)}</button>`)
+        .join('');
+    };
+    const open = (showAll) => { render(showAll); panel.hidden = false; };
+    const close = () => { panel.hidden = true; };
+
+    input.addEventListener('focus', () => open(true));
+    input.addEventListener('click', () => open(true));
+    input.addEventListener('input', () => { if (!selecting) open(false); });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+    input.addEventListener('blur', () => setTimeout(close, 150));
+
+    panel.addEventListener('mousedown', (e) => {
+      const btn = e.target.closest('.town-option');
+      if (!btn) return;
+      e.preventDefault(); // keep focus off the panel so blur doesn't fire first
+      selecting = true;
+      input.value = btn.textContent;
+      input.dispatchEvent(new Event('input', { bubbles: true })); // fire autosave etc.
+      selecting = false;
+      close();
+    });
+  },
+
   postCardHtml(post, { linkTitle = true } = {}) {
     const paragraphs = String(post.body || '')
       .split(/\n{2,}/)

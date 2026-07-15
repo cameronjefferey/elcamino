@@ -307,19 +307,88 @@ app.get('/photos/:id', async (req, res) => {
 
 // ---------- location ----------
 
+// Approximate how far along the route a point is (km from the start) by
+// projecting it onto the nearest town-to-town segment of the path. This lets
+// off-route villages still show sensible progress on the map.
+function kmAlongRoute(lat, lng) {
+  const toRad = (d) => (d * Math.PI) / 180;
+  const project = (la, lo) => [toRad(lo) * Math.cos(toRad(lat)), toRad(la)];
+  const [px, py] = project(lat, lng);
+  let best = { dist: Infinity, km: 0 };
+  for (let i = 0; i < TOWNS.length - 1; i++) {
+    const a = TOWNS[i];
+    const b = TOWNS[i + 1];
+    const [ax, ay] = project(a.lat, a.lng);
+    const [bx, by] = project(b.lat, b.lng);
+    const dx = bx - ax;
+    const dy = by - ay;
+    const len2 = dx * dx + dy * dy || 1e-12;
+    let t = ((px - ax) * dx + (py - ay) * dy) / len2;
+    t = Math.max(0, Math.min(1, t));
+    const d = Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+    if (d < best.dist) best = { dist: d, km: a.km + t * (b.km - a.km) };
+  }
+  return Math.round(best.km);
+}
+
+// Look up a place name -> coordinates via OpenStreetMap's Nominatim (free, no
+// key). Low volume + cached, and scoped to Spain/France where the route runs.
+const geoCache = new Map();
+async function geocodePlace(q) {
+  const key = q.toLowerCase();
+  if (geoCache.has(key)) return geoCache.get(key);
+  const url =
+    `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=es,fr&q=${encodeURIComponent(q)}`;
+  const r = await fetch(url, { headers: { 'User-Agent': 'Camino family blog (contact: elcaminodesantiago26@gmail.com)' } });
+  if (!r.ok) throw new Error(`geocoder ${r.status}`);
+  const arr = await r.json();
+  const hit = arr[0] ? { lat: parseFloat(arr[0].lat), lng: parseFloat(arr[0].lon) } : null;
+  geoCache.set(key, hit);
+  return hit;
+}
+
 app.get('/api/location', async (req, res) => {
   const loc = await getSetting('location');
   res.json(loc || { townIndex: 0 });
 });
 
 app.put('/api/location', requireAuth, async (req, res) => {
-  const townIndex = parseInt(req.body.townIndex);
-  if (!Number.isInteger(townIndex) || townIndex < 0 || townIndex >= TOWNS.length) {
-    return res.status(400).json({ error: 'Please pick a town from the list.' });
+  const save = async (loc) => {
+    await setSetting('location', { ...loc, updatedAt: new Date().toISOString() });
+    res.json(await getSetting('location'));
+  };
+
+  // A known stage town chosen by index.
+  if (req.body.townIndex !== undefined && req.body.place === undefined) {
+    const townIndex = parseInt(req.body.townIndex);
+    if (!Number.isInteger(townIndex) || townIndex < 0 || townIndex >= TOWNS.length) {
+      return res.status(400).json({ error: 'Please pick a town from the list.' });
+    }
+    const t = TOWNS[townIndex];
+    return save({ name: t.name, lat: t.lat, lng: t.lng, km: t.km, townIndex });
   }
-  const loc = { townIndex, updatedAt: new Date().toISOString() };
-  await setSetting('location', loc);
-  res.json(loc);
+
+  // Any typed place. If it matches a stage town, use its exact data; otherwise
+  // geocode it and estimate how far along the route it is.
+  const place = String(req.body.place || '').trim();
+  if (!place) return res.status(400).json({ error: 'Please type where you are.' });
+  const matchIdx = TOWNS.findIndex((t) => t.name.toLowerCase() === place.toLowerCase());
+  if (matchIdx >= 0) {
+    const t = TOWNS[matchIdx];
+    return save({ name: t.name, lat: t.lat, lng: t.lng, km: t.km, townIndex: matchIdx });
+  }
+  try {
+    const hit = await geocodePlace(place);
+    if (!hit) {
+      return res.status(422).json({
+        error: `Couldn\u2019t find \u201c${place}\u201d on the map. Try a nearby bigger town, or check the spelling.`,
+      });
+    }
+    return save({ name: place, lat: hit.lat, lng: hit.lng, km: kmAlongRoute(hit.lat, hit.lng), townIndex: null });
+  } catch (err) {
+    console.error('[location] geocode failed:', err.message);
+    res.status(502).json({ error: 'Couldn\u2019t reach the map service right now \u2014 try again in a minute.' });
+  }
 });
 
 // ---------- weather ----------
@@ -330,7 +399,22 @@ let weatherCache = { townIndex: null, expiresAt: 0, payload: null };
 
 app.get('/api/weather', async (req, res) => {
   const loc = await getSetting('location');
-  const idx = Math.min(Math.max(parseInt(loc?.townIndex) || 0, 0), TOWNS.length - 1);
+  // For a listed town use its index; for a geocoded village use the nearest
+  // town by distance-along-route so the forecast still makes sense.
+  let idx;
+  if (loc && loc.townIndex != null) {
+    idx = loc.townIndex;
+  } else if (loc && loc.km != null) {
+    idx = 0;
+    let best = Infinity;
+    TOWNS.forEach((t, i) => {
+      const d = Math.abs(t.km - loc.km);
+      if (d < best) { best = d; idx = i; }
+    });
+  } else {
+    idx = 0;
+  }
+  idx = Math.min(Math.max(idx, 0), TOWNS.length - 1);
 
   if (weatherCache.townIndex === idx && Date.now() < weatherCache.expiresAt) {
     return res.json(weatherCache.payload);

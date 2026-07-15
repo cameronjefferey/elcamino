@@ -55,13 +55,11 @@
     show('login');
   });
 
-  // ---------- town lists ----------
-  const townOptions = cfg.towns.map((t) => `<option value="${Camino.esc(t.name)}">`).join('');
-  $('towns-list').innerHTML = townOptions;
-  $('towns-list-2').innerHTML = townOptions;
-  $('town-select').innerHTML = cfg.towns
-    .map((t, i) => `<option value="${i}">${Camino.esc(t.name)} (${t.km} km)</option>`)
-    .join('');
+  // ---------- town pickers ----------
+  // Tap-anywhere town dropdowns for the free-text location fields.
+  ['pf-location', 'pf-start', 'mf-start', 'mf-end', 'town-input'].forEach((id) => {
+    if ($(id)) Camino.attachTownPicker($(id), cfg.towns);
+  });
 
   // ---------- menu / my posts ----------
   async function enterMenu() {
@@ -175,17 +173,16 @@
     } catch { return 'error'; }
   }
 
-  // When the post's location matches a town on the route, move the map's
-  // "where we are now" marker automatically — no separate step needed.
+  // Move the map's "where we are now" marker to match the post's location.
+  // The server matches a stage town or geocodes any other village, so this
+  // works even for places that aren't on the route list.
   function maybeUpdateMapLocation() {
-    const name = $('pf-location').value.trim().toLowerCase();
-    if (!name) return;
-    const idx = cfg.towns.findIndex((t) => t.name.toLowerCase() === name);
-    if (idx < 0) return;
+    const place = $('pf-location').value.trim();
+    if (!place) return;
     fetch('/api/location', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ townIndex: idx }),
+      body: JSON.stringify({ place }),
     }).catch(() => { /* non-fatal; they can set it manually */ });
   }
 
@@ -415,32 +412,40 @@
   // ---------- location ----------
   async function refreshLocationView() {
     const loc = await (await fetch('/api/location')).json();
-    const town = cfg.towns[loc.townIndex ?? 0];
+    const name = loc.name || cfg.towns[loc.townIndex ?? 0]?.name || '';
     $('current-loc').innerHTML = loc.updatedAt
-      ? `Right now the map says you're in <strong>${Camino.esc(town.name)}</strong>.`
-      : `The map hasn't been set yet — pick your starting town below.`;
-    $('town-select').value = String(loc.townIndex ?? 0);
+      ? `Right now the map shows you in <strong>${Camino.esc(name)}</strong>.`
+      : `The map hasn't been set yet — type where you are below.`;
+    $('town-input').value = loc.updatedAt ? name : '';
+    $('location-msg').innerHTML = '';
   }
-  $('view-location').addEventListener('transitionend', () => {});
   document.querySelectorAll('[data-goto="location"]').forEach((el) =>
     el.addEventListener('click', refreshLocationView));
 
   $('save-location-btn').addEventListener('click', async () => {
     const btn = $('save-location-btn');
+    const place = $('town-input').value.trim();
+    if (!place) {
+      $('location-msg').innerHTML = `<div class="notice err">Type where you are first.</div>`;
+      return;
+    }
+    const orig = btn.textContent;
     btn.disabled = true;
+    btn.textContent = 'Finding it on the map…';
     try {
       const res = await fetch('/api/location', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ townIndex: Number($('town-select').value) }),
+        body: JSON.stringify({ place }),
       });
-      if (!res.ok) throw new Error();
-      const town = cfg.towns[Number($('town-select').value)];
-      $('location-msg').innerHTML = `<div class="notice ok">Done! The map now shows you in ${Camino.esc(town.name)}. 📍</div>`;
-    } catch {
-      $('location-msg').innerHTML = `<div class="notice err">That didn’t save — try again in a moment.</div>`;
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'That didn’t save — try again in a moment.');
+      $('location-msg').innerHTML = `<div class="notice ok">Done! The map now shows you in ${Camino.esc(data.name)}. 📍</div>`;
+    } catch (err) {
+      $('location-msg').innerHTML = `<div class="notice err">${Camino.esc(err.message)}</div>`;
     }
     btn.disabled = false;
+    btn.textContent = orig;
   });
 
   // ---------- messages & comments (one combined inbox) ----------
