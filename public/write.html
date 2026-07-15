@@ -32,12 +32,13 @@
     <section id="view-menu" hidden>
       <h1 class="center">What would you like to do?</h1>
       <div class="menu-btns">
-        <button class="btn" data-goto="post">✏️&nbsp; Write a new post</button>
-        <button class="btn green" data-goto="location">📍&nbsp; Update where we are</button>
-        <button class="btn" style="background: var(--ochre); color:#4d3505;" data-goto="numbers">🔢&nbsp; Add today's numbers</button>
-        <button class="btn" style="background: #5b7c8a;" data-goto="messages">💌&nbsp; Messages from readers</button>
-        <button class="btn" style="background: var(--olive);" data-goto="comments">💬&nbsp; Comments on the blog</button>
-        <button class="btn subtle" data-goto="followers" style="min-height:56px; font-size:18px;">✉️&nbsp; See who's following along</button>
+        <button class="btn" data-goto="post">✏️&nbsp; Write today's update</button>
+        <button class="btn" style="background: #5b7c8a;" data-goto="messages">💬&nbsp; Messages &amp; comments</button>
+      </div>
+      <div class="menu-btns-secondary">
+        <button class="btn subtle" data-goto="location">📍&nbsp; Update our location</button>
+        <button class="btn subtle" data-goto="numbers">🔢&nbsp; Edit past numbers</button>
+        <button class="btn subtle" data-goto="followers">✉️&nbsp; Who's following</button>
       </div>
       <div class="card">
         <h2 style="margin-top:0; font-size: 21px;">Your posts</h2>
@@ -69,10 +70,46 @@
             <input type="number" id="pf-day" inputmode="numeric" min="1">
           </div>
           <div style="flex:2;">
-            <label for="pf-location">Where are you?</label>
+            <label for="pf-location">Where are you now?</label>
             <input type="text" id="pf-location" list="towns-list" placeholder="Town name" autocomplete="off">
             <datalist id="towns-list"></datalist>
           </div>
+        </div>
+
+        <div id="pf-numbers-block" class="numbers-block">
+          <h2 style="font-size:20px; margin:0 0 2px;">📊 Today's numbers</h2>
+          <p class="hint" style="margin:0 0 8px;">All optional — leave blank on a rest day.</p>
+
+          <label for="pf-miles">
+            Distance walked
+            <span class="unit-toggle" style="margin-left:10px; vertical-align:middle;">
+              <button type="button" data-u="mi">miles</button>
+              <button type="button" data-u="km">km</button>
+            </span>
+          </label>
+          <input type="number" id="pf-miles" inputmode="decimal" step="0.1" min="0" placeholder="e.g. 14.5">
+
+          <label for="pf-steps">Steps <span class="hint">(from your watch or phone)</span></label>
+          <input type="number" id="pf-steps" inputmode="numeric" min="0" placeholder="e.g. 32000">
+
+          <label for="pf-start">Started walking in <span class="hint">(the town above is where you ended)</span></label>
+          <input type="text" id="pf-start" list="towns-list" placeholder="Town" autocomplete="off">
+
+          <details class="optional-fields">
+            <summary>More fun numbers (optional) ▾</summary>
+            <label for="pf-elev">Elevation climbed (feet)</label>
+            <input type="number" id="pf-elev" inputmode="numeric" min="0">
+            <label for="pf-blisters">Blisters 🩹</label>
+            <input type="number" id="pf-blisters" inputmode="numeric" min="0">
+            <label for="pf-cafes">Cafés con leche ☕</label>
+            <input type="number" id="pf-cafes" inputmode="numeric" min="0">
+            <label for="pf-favorite">Favorite moment of the day</label>
+            <input type="text" id="pf-favorite" placeholder="e.g. Sunrise over the vineyards">
+            <label for="pf-accommodation">Where you're sleeping 🛏️</label>
+            <input type="text" id="pf-accommodation" placeholder="e.g. Albergue, hotel, pension">
+            <label for="pf-meal">Where you ate 🍽️</label>
+            <input type="text" id="pf-meal" placeholder="e.g. Restaurant, trail, home">
+          </details>
         </div>
 
         <button class="btn green big mt" type="submit" id="publish-btn">Publish ✓</button>
@@ -94,20 +131,12 @@
       </div>
     </section>
 
-    <!-- MESSAGES -->
+    <!-- MESSAGES & COMMENTS (combined inbox) -->
     <section id="view-messages" hidden>
       <p><a href="#" data-goto="menu">← Back</a></p>
-      <h1>Messages from readers</h1>
-      <p style="color:var(--ink-soft);">When someone replies to one of your post emails, it shows up here.</p>
+      <h1>Messages &amp; comments</h1>
+      <p style="color:var(--ink-soft);">Everything people send you — email replies and comments on your posts — all in one place, newest first.</p>
       <div id="messages-list"></div>
-    </section>
-
-    <!-- COMMENTS -->
-    <section id="view-comments" hidden>
-      <p><a href="#" data-goto="menu">← Back</a></p>
-      <h1>Comments on the blog</h1>
-      <p style="color:var(--ink-soft);">Notes people leave on your posts. Reply and they'll appear right on the post, or remove any you don't want.</p>
-      <div id="comments-admin"></div>
     </section>
 
     <!-- FOLLOWERS -->

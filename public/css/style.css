@@ -520,8 +520,11 @@ table.metrics tr.total-row td { font-weight: 800; background: #f4eee0; }
 
 /* ---------- author (write) area ---------- */
 
-.menu-btns { display: grid; gap: 14px; margin: 24px 0; }
+.menu-btns { display: grid; gap: 14px; margin: 24px 0 12px; }
 .menu-btns .btn { font-size: 22px; min-height: 84px; border-radius: 18px; }
+
+.menu-btns-secondary { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 0 0 24px; }
+.menu-btns-secondary .btn { flex: 1 1 160px; min-height: 52px; font-size: 16px; }
 
 .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; margin-top: 12px; }
 .thumb { position: relative; border-radius: 10px; overflow: hidden; background: var(--line); aspect-ratio: 1; }
@@ -546,6 +549,15 @@ table.metrics tr.total-row td { font-weight: 800; background: #f4eee0; }
 }
 
 .autosave-note { color: var(--ink-soft); font-size: 15px; text-align: center; margin-top: 10px; min-height: 22px; }
+
+.numbers-block {
+  margin-top: 26px;
+  padding: 18px 18px 6px;
+  background: #fdf7ea;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.numbers-block h2 { font-family: 'Fraunces', Georgia, serif; }
 
 .post-admin-row {
   display: flex; align-items: center; gap: 10px;
