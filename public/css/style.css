@@ -291,6 +291,92 @@ input:focus, select:focus, textarea:focus {
 .photo-grid .first-wide { grid-column: 1 / -1; }
 .photo-grid .first-wide img { aspect-ratio: 16 / 10; }
 
+/* ---------- comments ---------- */
+
+.comments-card { margin-top: 22px; scroll-margin-top: 80px; }
+.comments-title { margin: 0 0 4px; font-size: 24px; }
+.comments-empty { color: var(--ink-soft); font-size: 17px; }
+
+.comment {
+  position: relative;
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+}
+.comment:first-child { border-top: none; }
+.comment.from-author {
+  background: #fdf3e3;
+  border: 1px solid var(--ochre);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.comment-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.comment-name { font-weight: 800; font-size: 17px; }
+.author-badge {
+  background: var(--ochre);
+  color: #4d3505;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.comment-when { color: var(--ink-soft); font-size: 14px; }
+.comment-body { font-size: 17px; }
+.comment-body p { margin: 6px 0 0; }
+.comment-delete {
+  background: transparent;
+  border: none;
+  color: #a33;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 0;
+  margin-top: 4px;
+}
+
+.comment-form { margin-top: 24px; border-top: 2px solid var(--line); padding-top: 18px; }
+.comment-form h3 { font-size: 20px; }
+
+.privacy-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-weight: 400;
+  font-size: 16px;
+  color: var(--ink-soft);
+  margin: 14px 0 0;
+  cursor: pointer;
+}
+.privacy-check input {
+  width: 22px;
+  height: 22px;
+  min-height: 0;
+  flex: none;
+  margin-top: 2px;
+  accent-color: var(--olive);
+}
+
+.card.private-note { border-color: var(--olive); background: #f3f6ee; }
+.lock-badge {
+  display: inline-block;
+  background: var(--olive);
+  color: #fff;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 2px 12px;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
 /* ---------- lightbox ---------- */
 
 .lightbox {

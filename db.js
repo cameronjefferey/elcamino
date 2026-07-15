@@ -101,12 +101,27 @@ async function init() {
       value JSONB NOT NULL,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
+
+    CREATE TABLE IF NOT EXISTS comments (
+      id SERIAL PRIMARY KEY,
+      post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+      author_name TEXT NOT NULL,
+      body TEXT NOT NULL,
+      is_author BOOLEAN NOT NULL DEFAULT false,
+      is_private BOOLEAN NOT NULL DEFAULT false,
+      email TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE INDEX IF NOT EXISTS comments_post_idx ON comments (post_id, created_at);
   `);
 
   // Add columns introduced after the table already existed in production.
   await pool.query(`
     ALTER TABLE metrics ADD COLUMN IF NOT EXISTS accommodation TEXT;
     ALTER TABLE metrics ADD COLUMN IF NOT EXISTS meal_location TEXT;
+    ALTER TABLE comments ADD COLUMN IF NOT EXISTS is_private BOOLEAN NOT NULL DEFAULT false;
+    ALTER TABLE comments ADD COLUMN IF NOT EXISTS email TEXT;
   `);
 
   // Clean up photos that were uploaded but never attached to a published post.

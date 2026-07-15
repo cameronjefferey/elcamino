@@ -110,7 +110,8 @@ app.get('/api/posts', async (req, res) => {
   const offset = parseInt(req.query.offset) || 0;
   const [{ rows: posts }, { rows: countRows }] = await Promise.all([
     pool.query(
-      `SELECT id, title, body, day_number, location, created_at, updated_at
+      `SELECT id, title, body, day_number, location, created_at, updated_at,
+              (SELECT COUNT(*)::int FROM comments c WHERE c.post_id = posts.id AND c.is_private = false) AS comment_count
        FROM posts ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
       [limit, offset]
     ),
@@ -122,7 +123,8 @@ app.get('/api/posts', async (req, res) => {
 
 app.get('/api/posts/:id', async (req, res) => {
   const { rows } = await pool.query(
-    `SELECT id, title, body, day_number, location, created_at, updated_at
+    `SELECT id, title, body, day_number, location, created_at, updated_at,
+            (SELECT COUNT(*)::int FROM comments c WHERE c.post_id = posts.id AND c.is_private = false) AS comment_count
      FROM posts WHERE id = $1`,
     [req.params.id]
   );
@@ -178,6 +180,108 @@ app.put('/api/posts/:id', requireAuth, async (req, res) => {
 app.delete('/api/posts/:id', requireAuth, async (req, res) => {
   await pool.query('DELETE FROM posts WHERE id = $1', [req.params.id]);
   res.json({ ok: true });
+});
+
+// ---------- comments ----------
+
+// Readers post comments without an account, so guard the public endpoint with a
+// light rate limit and a hidden honeypot field that only bots tend to fill.
+const commentAttempts = new Map(); // ip -> { count, resetAt }
+function tooManyComments(ip) {
+  const now = Date.now();
+  const rec = commentAttempts.get(ip);
+  if (!rec || now > rec.resetAt) {
+    commentAttempts.set(ip, { count: 1, resetAt: now + 10 * 60 * 1000 });
+    return false;
+  }
+  rec.count++;
+  return rec.count > 8;
+}
+
+// Public list: only public comments ever leave the server here. Private notes
+// are for the authors' eyes only (see the /api/comments moderation route).
+app.get('/api/posts/:id/comments', async (req, res) => {
+  const { rows } = await pool.query(
+    `SELECT id, post_id, author_name, body, is_author, created_at
+     FROM comments WHERE post_id = $1 AND is_private = false ORDER BY created_at ASC`,
+    [req.params.id]
+  );
+  res.json({ comments: rows });
+});
+
+app.post('/api/posts/:id/comments', async (req, res) => {
+  const authed = isAuthed(req);
+  if (req.body.website) return res.json({ ok: true }); // honeypot: silently drop bots
+  if (!authed && tooManyComments(req.ip)) {
+    return res.status(429).json({ error: 'That\u2019s a lot of comments in a short time \u2014 please wait a bit and try again.' });
+  }
+  const body = String(req.body.body || '').trim().slice(0, 3000);
+  if (!body) return res.status(400).json({ error: 'Please write a little something first!' });
+  const name = authed
+    ? config.authors
+    : String(req.body.name || '').trim().slice(0, 80) || 'Anonymous';
+  // The author's on-site replies are always public; only readers can mark a note private.
+  const isPrivate = !authed && !!req.body.is_private;
+  let email = null;
+  if (isPrivate) {
+    const e = String(req.body.email || '').trim().toLowerCase();
+    if (e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) email = e;
+  }
+
+  const { rows: postRows } = await pool.query('SELECT id, title FROM posts WHERE id = $1', [req.params.id]);
+  if (!postRows.length) return res.status(404).json({ error: 'That post no longer exists.' });
+
+  const { rows } = await pool.query(
+    `INSERT INTO comments (post_id, author_name, body, is_author, is_private, email)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING id, post_id, author_name, body, is_author, is_private, created_at`,
+    [req.params.id, name, body, authed, isPrivate, email]
+  );
+  res.json(rows[0]);
+});
+
+app.delete('/api/comments/:id', requireAuth, async (req, res) => {
+  await pool.query('DELETE FROM comments WHERE id = $1', [req.params.id]);
+  res.json({ ok: true });
+});
+
+// All comments across posts, newest first, for the author's moderation view.
+// Includes private notes and whether a private note left an email to reply to.
+app.get('/api/comments', requireAuth, async (req, res) => {
+  const { rows } = await pool.query(
+    `SELECT c.id, c.post_id, c.author_name, c.body, c.is_author, c.is_private,
+            c.email, c.created_at, p.title AS post_title
+     FROM comments c JOIN posts p ON p.id = c.post_id
+     ORDER BY c.created_at DESC LIMIT 200`
+  );
+  const comments = rows.map((c) => ({ ...c, has_email: !!c.email, email: undefined }));
+  res.json({ comments });
+});
+
+// Reply privately (by email) to a private comment that left an address.
+app.post('/api/comments/:id/reply', requireAuth, async (req, res) => {
+  const text = String(req.body.text || '').trim();
+  if (!text) return res.status(400).json({ error: 'Write a little something first!' });
+  const { rows } = await pool.query(
+    `SELECT c.email, c.author_name, p.title AS post_title
+     FROM comments c JOIN posts p ON p.id = c.post_id WHERE c.id = $1`,
+    [req.params.id]
+  );
+  if (!rows.length || !rows[0].email) {
+    return res.status(400).json({ error: 'This note didn\u2019t include an email, so there\u2019s no way to write back.' });
+  }
+  try {
+    await sendReply({
+      to: rows[0].email,
+      subject: `Re: your note on \u201c${rows[0].post_title}\u201d`,
+      text,
+    });
+    console.log(`[comment-reply] emailed ${rows[0].email} (comment ${req.params.id})`);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[comment-reply] failed:', err.message);
+    res.status(502).json({ error: 'Couldn\u2019t send right now \u2014 try again in a minute.' });
+  }
 });
 
 // ---------- photos ----------

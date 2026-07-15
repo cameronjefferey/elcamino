@@ -9,7 +9,7 @@
   const DRAFT_KEY = 'camino_draft';
 
   // ---------- view switching ----------
-  const views = ['login', 'menu', 'post', 'location', 'numbers', 'messages', 'followers'];
+  const views = ['login', 'menu', 'post', 'location', 'numbers', 'messages', 'comments', 'followers'];
   function show(view) {
     views.forEach((v) => { $(`view-${v}`).hidden = v !== view; });
     window.scrollTo(0, 0);
@@ -424,6 +424,122 @@
   }
   document.querySelectorAll('[data-goto="messages"]').forEach((el) =>
     el.addEventListener('click', enterMessages));
+
+  // ---------- comments on the blog ----------
+  async function enterComments() {
+    const el = $('comments-admin');
+    el.innerHTML = `<div class="card center" style="color:var(--ink-soft);">Loading…</div>`;
+    try {
+      const { comments } = await (await fetch('/api/comments')).json();
+      if (!comments.length) {
+        el.innerHTML = `<div class="card center">
+          <h2 style="margin-top:0;">No comments yet</h2>
+          <p style="color:var(--ink-soft);">When friends and family leave a note on one of your posts, it'll show up here.</p>
+        </div>`;
+        return;
+      }
+      el.innerHTML = comments.map((c) => {
+        // Decide how (and whether) the author can reply to this comment.
+        // Public reader note → reply publicly on the post.
+        // Private note with an email → reply privately by email.
+        // Private note without an email → no way to write back.
+        let replyBtn = '';
+        let replyBox = '';
+        if (!c.is_author) {
+          if (!c.is_private) {
+            replyBtn = `<button type="button" class="btn subtle reply-c mt">↩️&nbsp; Reply publicly</button>`;
+            replyBox = `<div class="reply-box" hidden>
+              <textarea placeholder="Write back to ${Camino.esc(c.author_name)}…" style="min-height:110px; margin-top:12px;"></textarea>
+              <button type="button" class="btn green send-c" data-mode="public" style="margin-top:10px;">Post public reply ✓</button>
+              <div class="reply-msg"></div>
+            </div>`;
+          } else if (c.has_email) {
+            replyBtn = `<button type="button" class="btn subtle reply-c mt">↩️&nbsp; Reply by email</button>`;
+            replyBox = `<div class="reply-box" hidden>
+              <textarea placeholder="Write back to ${Camino.esc(c.author_name)}…" style="min-height:110px; margin-top:12px;"></textarea>
+              <button type="button" class="btn green send-c" data-mode="private" style="margin-top:10px;">Send private reply ✉️</button>
+              <div class="reply-msg"></div>
+            </div>`;
+          } else {
+            replyBox = `<p class="hint" style="margin-top:10px;">They didn't leave an email, so there's no way to write back to this private note.</p>`;
+          }
+        }
+        return `
+        <div class="card ${c.is_private ? 'private-note' : ''}" data-id="${c.id}" data-post="${c.post_id}">
+          <div style="color:var(--ink-soft); font-size:15px;">
+            ${c.is_private ? '<span class="lock-badge">🔒 Private — only you can see this</span><br>' : ''}
+            on <a href="/post/${c.post_id}" target="_blank" rel="noopener">${Camino.esc(c.post_title)}</a>
+          </div>
+          <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:4px;">
+            <strong style="font-size:18px;">${c.is_author ? '✍️ ' : ''}${Camino.esc(c.author_name)}</strong>
+            <span style="color:var(--ink-soft); font-size:15px;">${c.created_at ? Camino.fmtDate(c.created_at, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''}</span>
+          </div>
+          <div style="white-space: pre-wrap; font-size:17px; margin-top:8px;">${Camino.esc(c.body)}</div>
+          ${replyBtn}
+          <button type="button" class="btn subtle del-c mt" style="color:#a33; border-color:#e3c4bc; margin-left:8px;">Delete</button>
+          ${replyBox}
+        </div>`;
+      }).join('');
+
+      el.querySelectorAll('.reply-c').forEach((b) => {
+        b.addEventListener('click', () => {
+          const box = b.closest('.card').querySelector('.reply-box');
+          box.hidden = !box.hidden;
+          if (!box.hidden) box.querySelector('textarea').focus();
+        });
+      });
+      el.querySelectorAll('.del-c').forEach((b) => {
+        b.addEventListener('click', async () => {
+          const card = b.closest('.card');
+          if (!confirm('Delete this comment?')) return;
+          await fetch(`/api/comments/${card.dataset.id}`, { method: 'DELETE' });
+          card.remove();
+          if (!el.querySelector('.card')) enterComments();
+        });
+      });
+      el.querySelectorAll('.send-c').forEach((b) => {
+        b.addEventListener('click', async () => {
+          const card = b.closest('.card');
+          const textarea = card.querySelector('.reply-box textarea');
+          const msgEl = card.querySelector('.reply-msg');
+          if (!textarea.value.trim()) {
+            msgEl.innerHTML = `<div class="notice err">Write a little something first!</div>`;
+            return;
+          }
+          const isPrivate = b.dataset.mode === 'private';
+          b.disabled = true;
+          b.textContent = isPrivate ? 'Sending…' : 'Posting…';
+          try {
+            const res = isPrivate
+              ? await fetch(`/api/comments/${card.dataset.id}/reply`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ text: textarea.value }),
+                })
+              : await fetch(`/api/posts/${card.dataset.post}/comments`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ body: textarea.value }),
+                });
+            if (!res.ok) throw new Error((await res.json()).error || 'Server error');
+            msgEl.innerHTML = isPrivate
+              ? `<div class="notice ok">Sent by email — just between you two. ✉️</div>`
+              : `<div class="notice ok">Reply posted! It's now on the post for everyone to see. 🎉</div>`;
+            textarea.disabled = true;
+            b.textContent = isPrivate ? 'Reply sent ✓' : 'Reply posted ✓';
+          } catch (err) {
+            msgEl.innerHTML = `<div class="notice err">${Camino.esc(err.message)}</div>`;
+            b.disabled = false;
+            b.textContent = isPrivate ? 'Send private reply ✉️' : 'Post public reply ✓';
+          }
+        });
+      });
+    } catch (err) {
+      el.innerHTML = `<div class="notice err">${Camino.esc(err.message)} — tap the button again to retry.</div>`;
+    }
+  }
+  document.querySelectorAll('[data-goto="comments"]').forEach((el) =>
+    el.addEventListener('click', enterComments));
 
   // ---------- followers ----------
   async function enterFollowers() {

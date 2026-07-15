@@ -232,6 +232,10 @@ const Camino = {
     if (post.day_number) meta.push(`<span class="day-chip">Day ${post.day_number}</span>`);
     meta.push(`<span>${this.fmtDate(post.created_at)}</span>`);
     if (post.location) meta.push(`<span>📍 ${this.esc(post.location)}</span>`);
+    // On the feed, a comment count nudges readers into the conversation.
+    if (linkTitle && post.comment_count > 0) {
+      meta.push(`<a href="/post/${post.id}#comments" style="text-decoration:none;">💬 ${post.comment_count}</a>`);
+    }
     const title = linkTitle
       ? `<a href="/post/${post.id}">${this.esc(post.title)}</a>`
       : this.esc(post.title);
@@ -241,5 +245,24 @@ const Camino = {
       <div class="post-body">${paragraphs}</div>
       ${this.photoGridHtml(post.photo_ids)}
     </article>`;
+  },
+
+  // ---- comments ----
+  // Shared renderer so a comment looks the same on the post page and in the
+  // author's moderation view. `authed` unlocks the little Delete button.
+  commentHtml(c, { authed = false } = {}) {
+    const when = this.fmtDate(c.created_at, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    const paras = String(c.body || '')
+      .split(/\n{2,}/)
+      .map((p) => `<p>${this.esc(p).replace(/\n/g, '<br>')}</p>`)
+      .join('');
+    return `<div class="comment ${c.is_author ? 'from-author' : ''}" data-id="${c.id}">
+      <div class="comment-head">
+        <span class="comment-name">${this.esc(c.author_name)}${c.is_author ? ' <span class="author-badge">✍️ author</span>' : ''}</span>
+        <span class="comment-when">${when}</span>
+      </div>
+      <div class="comment-body">${paras}</div>
+      ${authed ? '<button type="button" class="comment-delete" aria-label="Delete comment">Delete</button>' : ''}
+    </div>`;
   },
 };
